@@ -37,9 +37,9 @@ function Get-AzureStorageTableTable
 {
 	<#
 	.SYNOPSIS
-		Gets an Azure Table object
+		Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
 	.DESCRIPTION
-		Gets an Azure Table object, this table can be an Azure Storage Table or a Cosmos DB table
+		Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
 	.PARAMETER resourceGroup
         Resource Group where the Azure Storage Account or Cosmos DB are located
     .PARAMETER tableName
@@ -50,6 +50,18 @@ function Get-AzureStorageTableTable
         Storage Account name where the table lives
     .PARAMETER databaseName
         CosmosDB database where the table lives
+	.EXAMPLE
+		# Getting storage table object
+		$resourceGroup = "myResourceGroup"
+		$storageAccount = "myStorageAccountName"
+		$tableName = "table01"
+		$table = Get-AzureStorageTabletable -resourceGroup $resourceGroup -tableName $tableName -storageAccountName $storageAccount
+	.EXAMPLE
+		# Getting Cosmos DB table object
+		$resourceGroup = "myResourceGroup"
+		$databaseName = "myCosmosDbName"
+		$tableName = "table01"
+		$table01 = Get-AzureStorageTabletable -resourceGroup $resourceGroup -tableName $tableName -databaseName $databaseName
 	#>
 	[CmdletBinding()]
 	param
