@@ -203,11 +203,7 @@ function Add-StorageTableRow
 		$entity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" -ArgumentList $partitionKey, $rowKey
 	}
     
-    
-    #$entity.Timestamp = [datetime]::Now
-    
     # Adding the additional columns to the table entity
-
 	foreach ($prop in $property.Keys)
 	{
 		$entity.Properties.Add($prop, $property.Item($prop))
