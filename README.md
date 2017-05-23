@@ -4,6 +4,17 @@ Repository for a sample module to manipulate Azure Storage Table rows/entities.
 For more information, please visit the following blog post:
 https://blogs.technet.microsoft.com/paulomarques/2017/01/17/working-with-azure-storage-tables-from-powershell/
 
+This module now supports two types of tables, *Azure Storage Tables* and *Azure Cosmos DB Tables*. Since Cosmos DB support using Table API is in preview state this support is also in preview. 
+
+In order to add Cosmos DB necessary dependencies a script called Install-CosmosDbInstallPreReqs.ps1 was created and is provided here as well. In order to enable Cosmos DB, please follow these steps:
+
+1. Download the module from GitHub or install directly from powershellgallery.com using *Install-Module AzureRmStorageTable* cmdlet.
+2. Open an elevated PowerShell command prompt
+3. Change folder to the root of the module
+4. Download the script https://raw.githubusercontent.com/paulomarquesc/AzureRmStorageTable/master/Install-CosmosDbInstallPreReqs.ps1, save it in the root folder of the module and execute it: .\Install-CosmosDbInstallPreReqs.ps1
+
+Note that you may need to adjust the script for updates in the assembly folders since the main assembly is in preview and that may introduce changes more frequently.
+
 Below you will get the help content of every function that is exposed through the AzureRmStorageTable module.
 
 # Get-AzureStorageTableTable
