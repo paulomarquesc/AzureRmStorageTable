@@ -210,7 +210,7 @@ function Add-StorageTableRow
 	}
     
     # Adding the dynamic table entity to the table
-    if ($tableType -eq "AzureStorageTable")
+    if ($table.GetType().Name -eq "AzureStorageTable")
     {
        	return ($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity)))
     }
