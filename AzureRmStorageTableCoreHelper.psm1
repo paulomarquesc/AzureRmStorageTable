@@ -162,7 +162,7 @@ function Get-AzureStorageTableTable
     }
 
     # Returns the table object
-    if ($PSCmdlet.ParameterSetName -eq "AzureTableStorage")
+    if (($PSCmdlet.ParameterSetName -eq "AzureTableStorage") -or ($PSCmdlet.ParameterSetName -eq "AzureRmTableStorage"))
     {
         return [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table
     }
