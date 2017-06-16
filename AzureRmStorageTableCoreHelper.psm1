@@ -87,7 +87,7 @@ function Get-AzureStorageTableTable
     {
         "AzureRmTableStorage"
             {
-				$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context	
+				$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccountName).Context	
 
                 [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
 
@@ -100,7 +100,7 @@ function Get-AzureStorageTableTable
             }
         "AzureTableStorage"
             {
-				$saContext = (Get-AzureStorageAccount -StorageAccountName $storageAccount).Context
+				$saContext = (Get-AzureStorageAccount -StorageAccountName $storageAccountName).Context
 
                 [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
 
