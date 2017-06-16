@@ -66,12 +66,13 @@ function Get-AzureStorageTableTable
 	[CmdletBinding()]
 	param
 	(
-        [Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="AzureRmTableStorage",Mandatory=$true)]
 		[string]$resourceGroup,
 		
 		[Parameter(Mandatory=$true)]
         [String]$tableName,
 
+		[Parameter(ParameterSetName="AzureRmTableStorage",Mandatory=$true)]
 		[Parameter(ParameterSetName="AzureTableStorage",Mandatory=$true)]
         [String]$storageAccountName,
 
@@ -84,13 +85,31 @@ function Get-AzureStorageTableTable
 
     switch ($PSCmdlet.ParameterSetName)
     {
-        "AzureTableStorage"
+        "AzureRmTableStorage"
             {
-                $saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
+				$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context	
 
-                [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext
+                [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
+
+				if ($table -eq $null)
+				{
+					[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = New-AzureStorageTable -Name $tableName -Context $saContext
+				}
 
                 $nullTableErrorMessage = "Table $tableName could not be retrieved from Storage Account $storageAccountName on resource group $resourceGroupName"
+            }
+        "AzureTableStorage"
+            {
+				$saContext = (Get-AzureStorageAccount -StorageAccountName $storageAccount).Context
+
+                [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
+
+				if ($table -eq $null)
+				{
+					[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = New-AzureStorageTable -Name $tableName -Context $saContext
+				}
+
+                $nullTableErrorMessage = "Table $tableName could not be retrieved from Classic Storage Account $storageAccountName"
 
             }
         "AzureCosmosDb"
@@ -129,6 +148,8 @@ function Get-AzureStorageTableTable
                 
                 [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table = `
                     [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$tableClient.GetTableReference($tableName)
+
+				$table.CreateIfNotExists()
     
                 $nullTableErrorMessage = "Table $tableName could not be retrieved from Cosmos DB database name $databaseName on resource group $resourceGroupName"
             }
@@ -277,13 +298,12 @@ function Get-AzureStorageTableRowAll
 	)
 
 	# No filtering
-
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
 		$tableQuery = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.TableQuery
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
-    else
+    elseif ($table.GetType().Name -eq "CloudTable")
     {
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
   	    $result = $table.ExecuteQuery($tableQuery)
@@ -337,7 +357,7 @@ function Get-AzureStorageTableRowByPartitionKey
 
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
-    else
+    elseif ($table.GetType().Name -eq "CloudTable")
     {
         Test-AzureStorageTableEmptyKeys -partitionKey $partitionKey -rowKey "notapplicable"
 
@@ -410,7 +430,7 @@ function Get-AzureStorageTableRowByColumnName
 
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
-    else
+    elseif ($table.GetType().Name -eq "CloudTable")
     {
         if ($columnName -eq "partitionKey")
         {
@@ -479,7 +499,7 @@ function Get-AzureStorageTableRowByCustomFilter
 
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
-    else
+    elseif ($table.GetType().Name -eq "CloudTable")
     {
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
@@ -542,7 +562,7 @@ function Update-AzureStorageTableRow
 		[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].RowKey)
 		[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::CombineFilters($partitionFilter,"and",$rowFilter)
 	}
-	else
+	elseif ($table.GetType().Name -eq "CloudTable")
 	{
 		# Getting original entity from CosmosDb
 		[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].PartitionKey)
@@ -556,7 +576,7 @@ function Update-AzureStorageTableRow
 	{
 		$updatedEntity = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity -ArgumentList $currentEntity.PartitionKey, $currentEntity.RowKey
 	}
-	else
+	elseif ($table.GetType().Name -eq "CloudTable")
 	{
 		$updatedEntity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" -ArgumentList $currentEntity.PartitionKey, $currentEntity.RowKey
 	}
@@ -576,7 +596,7 @@ function Update-AzureStorageTableRow
     {
 	    return ($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Replace($updatedEntity)))
     }
-    else
+    elseif ($table.GetType().Name -eq "CloudTable")
     {
     	return ($table.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Replace($updatedEntity)))
     }
@@ -661,7 +681,7 @@ function Remove-AzureStorageTableRow
         {
     		$entityToDelete = [Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity]($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Retrieve($partitionKey,$rowKey))).Result
         }
-        else
+        elseif ($table.GetType().Name -eq "CloudTable")
         {
             Test-AzureStorageTableEmptyKeys -PartitionKey $partitionKey -RowKey $rowKey
 
@@ -674,7 +694,7 @@ function Remove-AzureStorageTableRow
             {
     			$results += $table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Delete($entityToDelete))
             }
-            else
+            elseif ($table.GetType().Name -eq "CloudTable")
             {
     			$results += $table.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Delete($entityToDelete))
             }
