@@ -262,10 +262,11 @@ function Get-PSObjectFromEntity
 			$entityNewObj = New-Object -TypeName psobject
 			$entity.Properties.Keys | % {Add-Member -InputObject $entityNewObj -Name $_ -Value $entity.Properties[$_].PropertyAsObject -MemberType NoteProperty}
 
-			# Adding PartitionKey and RowKey to Object
+			# Adding table entity other attributes
 			Add-Member -InputObject $entityNewObj -Name "PartitionKey" -Value $entity.PartitionKey -MemberType NoteProperty
 			Add-Member -InputObject $entityNewObj -Name "RowKey" -Value $entity.RowKey -MemberType NoteProperty
-            Add-Member -InputObject $entityNewObj -Name "Timestamp" -Value $entity.Timestamp -MemberType NoteProperty
+			Add-Member -InputObject $entityNewObj -Name "Timestamp" -Value $entity.Timestamp -MemberType NoteProperty
+			Add-Member -InputObject $entityNewObj -Name "Etag" -Value $entity.Etag -MemberType NoteProperty
 
 			$returnObjects += $entityNewObj
 		}
@@ -555,41 +556,40 @@ function Update-AzureStorageTableRow
         throw "Update operation can happen on only one entity at a time, not in a list/array of entities."
     }
 
+	# # Building Filter to get the entity
+    # if ($table.GetType().Name -eq "AzureStorageTable")
+	# {
+	# 	[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].PartitionKey)
+	# 	[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].RowKey)
+	# 	[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::CombineFilters($partitionFilter,"and",$rowFilter)
+	# }
+	# elseif ($table.GetType().Name -eq "CloudTable")
+	# {
+	# 	[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].PartitionKey)
+	# 	[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].RowKey)
+	# 	[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::CombineFilters($partitionFilter,"and",$rowFilter)	
+	# }
+
+	# $currentEntity = Get-AzureStorageTableRowByCustomFilter -table $table -customFilter $finalFilter
+
     if ($table.GetType().Name -eq "AzureStorageTable")
 	{
-		# Getting original entity
-		[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].PartitionKey)
-		[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].RowKey)
-		[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::CombineFilters($partitionFilter,"and",$rowFilter)
+		$updatedEntity = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity -ArgumentList $entity.PartitionKey, $entity.RowKey
 	}
 	elseif ($table.GetType().Name -eq "CloudTable")
 	{
-		# Getting original entity from CosmosDb
-		[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].PartitionKey)
-		[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].RowKey)
-		[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::CombineFilters($partitionFilter,"and",$rowFilter)	
-	}
-
-	$currentEntity = Get-AzureStorageTableRowByCustomFilter -table $table -customFilter $finalFilter
-
-    if ($table.GetType().Name -eq "AzureStorageTable")
-	{
-		$updatedEntity = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity -ArgumentList $currentEntity.PartitionKey, $currentEntity.RowKey
-	}
-	elseif ($table.GetType().Name -eq "CloudTable")
-	{
-		$updatedEntity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" -ArgumentList $currentEntity.PartitionKey, $currentEntity.RowKey
+		$updatedEntity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" -ArgumentList $entity.PartitionKey, $entity.RowKey
 	}
 	# Iterating over PS Object properties to add to the updated entity 
 	foreach ($prop in $entity.psobject.Properties)
 	{
-		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp"))
+		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag"))
 		{
 			$updatedEntity.Properties.Add($prop.name, $prop.Value)
 		}
 	}
 
-	$updatedEntity.ETag = "*"
+	$updatedEntity.ETag = $entity.Etag
 
     # Updating the dynamic table entity to the table
     if ($table.GetType().Name -eq "AzureStorageTable")
