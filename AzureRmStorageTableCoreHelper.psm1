@@ -67,6 +67,7 @@ function Get-AzureStorageTableTable
 	param
 	(
 		[Parameter(ParameterSetName="AzureRmTableStorage",Mandatory=$true)]
+		[Parameter(ParameterSetName="AzureCosmosDb",Mandatory=$true)]
 		[string]$resourceGroup,
 		
 		[Parameter(Mandatory=$true)]
