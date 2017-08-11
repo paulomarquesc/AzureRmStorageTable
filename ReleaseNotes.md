@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 1.0.0.16
+* Fixed an issue with the parameter set for the Cosmos DB, it was missing the resource group parameter on it and therefore causing an error saying that the parameterset could not be identified.
+
 ## Version 1.0.0.15
 * Included etag on returned PSObject entities
 * Removed extra query to the table when updating an entity in order to be able to make optimistic locking work (it will trigger error 412 if someone else changed the entity), for locking mechanism, please refer to https://azure.microsoft.com/en-us/blog/managing-concurrency-in-microsoft-azure-storage-2/
