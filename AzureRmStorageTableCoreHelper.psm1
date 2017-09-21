@@ -150,7 +150,7 @@ function Get-AzureStorageTableTable
                 [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table = `
                     [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$tableClient.GetTableReference($tableName)
 
-				$table.CreateIfNotExists()
+				$table.CreateIfNotExists() | Out-Null
     
                 $nullTableErrorMessage = "Table $tableName could not be retrieved from Cosmos DB database name $databaseName on resource group $resourceGroupName"
             }
@@ -169,9 +169,8 @@ function Get-AzureStorageTableTable
     }
     else
     {
-        [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table
+        return [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table
     }
-	
 }
 
 function Add-StorageTableRow
