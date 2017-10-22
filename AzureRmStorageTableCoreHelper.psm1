@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 	AzureRmStorageTableCoreHelper.psm1 - PowerShell Module that contains all functions related to manipulating Azure Storage Table rows/entities.
