@@ -1,4 +1,4 @@
-﻿
+
 <#
 .SYNOPSIS
 	AzureRmStorageTableCoreHelper.psm1 - PowerShell Module that contains all functions related to manipulating Azure Storage Table rows/entities.
@@ -44,12 +44,10 @@ function Get-AzureStorageTableTable
         Resource Group where the Azure Storage Account or Cosmos DB are located
     .PARAMETER tableName
         Name of the table to retrieve
-    .PARAMETER tableName
-        Name of the table to retrieve
     .PARAMETER storageAccountName
         Storage Account name where the table lives
-    .PARAMETER databaseName
-        CosmosDB database where the table lives
+    .PARAMETER cosmosDbAccount
+        CosmosDB account name where the table lives (this parameter was previously called databaseName, which is now an alias of this parameter)
 	.EXAMPLE
 		# Getting storage table object
 		$resourceGroup = "myResourceGroup"
@@ -61,7 +59,7 @@ function Get-AzureStorageTableTable
 		$resourceGroup = "myResourceGroup"
 		$databaseName = "myCosmosDbName"
 		$tableName = "table01"
-		$table01 = Get-AzureStorageTabletable -resourceGroup $resourceGroup -tableName $tableName -databaseName $databaseName
+		$table01 = Get-AzureStorageTabletable -resourceGroup $resourceGroup -tableName $tableName -cosmosDbAccount $databaseName
 	#>
 	[CmdletBinding()]
 	param
@@ -77,8 +75,9 @@ function Get-AzureStorageTableTable
 		[Parameter(ParameterSetName="AzureTableStorage",Mandatory=$true)]
         [String]$storageAccountName,
 
-        [Parameter(ParameterSetName="AzureCosmosDb",Mandatory=$true)]
-        [String]$databaseName
+		[Parameter(ParameterSetName="AzureCosmosDb",Mandatory=$true)]
+		[Alias("databaseName")]
+        [String]$cosmosDbAccount
 
 	)
 
@@ -115,6 +114,7 @@ function Get-AzureStorageTableTable
             }
         "AzureCosmosDb"
             {
+				
                 $requiredDlls = @("Microsoft.WindowsAzure.Storage.dll",
                                     "Microsoft.Data.Services.Client.dll",
                                     "Microsoft.Azure.Documents.Client.dll",
@@ -132,14 +132,14 @@ function Get-AzureStorageTableTable
                     [System.Reflection.Assembly]::LoadFile((Join-Path $PSScriptRoot $dll)) | Out-Null
                 }
 
-                $keys = Invoke-AzureRmResourceAction -Action listKeys -ResourceType "Microsoft.DocumentDb/databaseAccounts" -ApiVersion "2015-04-08" -ResourceGroupName $resourceGroup -Name $databaseName -Force
+                $keys = Invoke-AzureRmResourceAction -Action listKeys -ResourceType "Microsoft.DocumentDb/databaseAccounts" -ApiVersion "2015-04-08" -ResourceGroupName $resourceGroup -Name $cosmosDbAccount -Force
 
                 if ($keys -eq $null)
                 {
-                    throw "Cosmos DB Database $databaseName didn't return any keys."
+                    throw "Cosmos DB Database $cosmosDbAccount didn't return any keys."
                 }
 
-                $connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=https://{0}.documents.azure.com",$databaseName,$keys.primaryMasterKey)
+                $connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=https://{0}.documents.azure.com",$cosmosDbAccount,$keys.primaryMasterKey)
 
                 [Microsoft.WindowsAzure.Storage.CloudStorageAccount, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$storage = `
                     [Microsoft.WindowsAzure.Storage.CloudStorageAccount, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Parse($connString)                                                
@@ -150,9 +150,9 @@ function Get-AzureStorageTableTable
                 [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table = `
                     [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$tableClient.GetTableReference($tableName)
 
-				$table.CreateIfNotExists()
+				$table.CreateIfNotExists() | Out-Null
     
-                $nullTableErrorMessage = "Table $tableName could not be retrieved from Cosmos DB database name $databaseName on resource group $resourceGroupName"
+                $nullTableErrorMessage = "Table $tableName could not be retrieved from Cosmos DB database name $cosmosDbAccount on resource group $resourceGroupName"
             }
     }
 
@@ -169,9 +169,8 @@ function Get-AzureStorageTableTable
     }
     else
     {
-        [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table
+        return [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table
     }
-	
 }
 
 function Add-StorageTableRow
