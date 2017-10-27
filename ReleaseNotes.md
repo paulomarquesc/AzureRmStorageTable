@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 1.0.0.20
+* Implemented some measures in order to avoid conflicts between different assembly versions, more specifically Microsoft.WindowsAzure.Storage.Dll.
+
 ## Version 1.0.0.19
 * Very minor update, changed a variable name on Get-AzureStorageTableTable function
 
