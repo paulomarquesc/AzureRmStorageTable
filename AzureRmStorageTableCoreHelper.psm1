@@ -141,11 +141,11 @@ function Get-AzureStorageTableTable
 
                 $connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=https://{0}.documents.azure.com",$cosmosDbAccount,$keys.primaryMasterKey)
 
-                [Microsoft.WindowsAzure.Storage.CloudStorageAccount, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$storage = `
+                [Microsoft.WindowsAzure.Storage.CloudStorageAccount, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$cosmosDbAcct = `
                     [Microsoft.WindowsAzure.Storage.CloudStorageAccount, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Parse($connString)                                                
 
                 [Microsoft.WindowsAzure.Storage.Table.CloudTableClient, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$tableClient = `
-                    [Microsoft.WindowsAzure.Storage.Table.CloudTableClient, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$storage.CreateCloudTableClient()                                                                                   
+                    [Microsoft.WindowsAzure.Storage.Table.CloudTableClient, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$cosmosDbAcct.CreateCloudTableClient()                                                                                   
                 
                 [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$table = `
                     [Microsoft.WindowsAzure.Storage.Table.CloudTable, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]$tableClient.GetTableReference($tableName)
