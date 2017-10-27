@@ -16,6 +16,34 @@
 
 # Module Functions
 
+function GetLatestFullAssemblyName
+{
+	param
+	(
+		[string]$dllName
+	)
+
+	# getting list of all assemblies
+	$assemblies = [appdomain]::currentdomain.getassemblies() | Where-Object {$_.location -like "*$dllName"}
+	
+	if ($assemblies -eq $null)
+	{
+		throw "Could not identify any assembly related to DLL named $dllName"
+	}
+
+	$sanitazedAssemblyList = @()
+	foreach ($assembly in $assemblies)
+	{
+		[version]$version = $assembly.fullname.split(",")[1].split("=")[1]
+		$sanitazedAssemblyList += New-Object -TypeName psobject -Property @{"version"=$version;"fullName"=$assembly.fullname}
+	}
+
+	return ($sanitazedAssemblyList | Sort-Object version -Descending)[0]
+}
+
+# Getting latest Microsoft.WindowsAzure.Storage.dll full Assembly name 
+$assemblySN = (GetLatestFullAssemblyName -dllName Microsoft.WindowsAzure.Storage.dll).fullname
+
 function Test-AzureStorageTableEmptyKeys
 {
 	[CmdletBinding()]
@@ -215,7 +243,7 @@ function Add-StorageTableRow
 	# Creates the table entity with mandatory partitionKey and rowKey arguments
 	if ($table.GetType().Name -eq "AzureStorageTable")
 	{
-		$entity = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity -ArgumentList $partitionKey, $rowKey
+		$entity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity,$assemblySN" -ArgumentList $partitionKey, $rowKey
 	}
 	else
 	{
@@ -233,7 +261,7 @@ function Add-StorageTableRow
     # Adding the dynamic table entity to the table
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-       	return ($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Insert($entity)))
+       	return ($table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::insert(`$entity)")))
     }
     else
     {
@@ -301,7 +329,7 @@ function Get-AzureStorageTableRowAll
 	# No filtering
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-		$tableQuery = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.TableQuery
+		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
     elseif ($table.GetType().Name -eq "CloudTable")
@@ -348,7 +376,7 @@ function Get-AzureStorageTableRowByPartitionKey
 
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-		$tableQuery = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.TableQuery
+		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
 
 		[string]$filter = `
 			[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("PartitionKey",`
@@ -422,7 +450,7 @@ function Get-AzureStorageTableRowByColumnName
 
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-		$tableQuery = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.TableQuery
+		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
 
 		[string]$filter = `
 			[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::$operator,$value)
@@ -494,7 +522,7 @@ function Get-AzureStorageTableRowByCustomFilter
 
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-		$tableQuery = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.TableQuery
+		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
 
 		$tableQuery.FilterString = $customFilter
 
@@ -556,25 +584,9 @@ function Update-AzureStorageTableRow
         throw "Update operation can happen on only one entity at a time, not in a list/array of entities."
     }
 
-	# # Building Filter to get the entity
-    # if ($table.GetType().Name -eq "AzureStorageTable")
-	# {
-	# 	[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].PartitionKey)
-	# 	[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal, $updatedEntityList[0].RowKey)
-	# 	[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::CombineFilters($partitionFilter,"and",$rowFilter)
-	# }
-	# elseif ($table.GetType().Name -eq "CloudTable")
-	# {
-	# 	[string]$partitionFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("PartitionKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].PartitionKey)
-	# 	[string]$rowFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition("RowKey",[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal, $updatedEntityList[0].RowKey)
-	# 	[string]$finalFilter = [Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::CombineFilters($partitionFilter,"and",$rowFilter)	
-	# }
-
-	# $currentEntity = Get-AzureStorageTableRowByCustomFilter -table $table -customFilter $finalFilter
-
     if ($table.GetType().Name -eq "AzureStorageTable")
 	{
-		$updatedEntity = New-Object -TypeName Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity -ArgumentList $entity.PartitionKey, $entity.RowKey
+		$updatedEntity = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity,$assemblySN" -ArgumentList $entity.PartitionKey, $entity.RowKey
 	}
 	elseif ($table.GetType().Name -eq "CloudTable")
 	{
@@ -594,7 +606,7 @@ function Update-AzureStorageTableRow
     # Updating the dynamic table entity to the table
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
-	    return ($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Replace($updatedEntity)))
+	    return ($table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::Replace(`$updatedEntity)")))
     }
     elseif ($table.GetType().Name -eq "CloudTable")
     {
@@ -665,7 +677,7 @@ function Remove-AzureStorageTableRow
 		{
 			throw "Delete operation cannot happen on an array of entities, altough you can pipe multiple items."
 		}
-
+		
 		$results = @()
 	}
 	
@@ -679,7 +691,7 @@ function Remove-AzureStorageTableRow
 
         if ($table.GetType().Name -eq "AzureStorageTable")
         {
-    		$entityToDelete = [Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity]($table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Retrieve($partitionKey,$rowKey))).Result
+			$entityToDelete = invoke-expression "[Microsoft.WindowsAzure.Storage.Table.DynamicTableEntity,$assemblySN](`$table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::Retrieve(`$partitionKey,`$rowKey))).Result"
         }
         elseif ($table.GetType().Name -eq "CloudTable")
         {
@@ -692,7 +704,7 @@ function Remove-AzureStorageTableRow
 		{
             if ($table.GetType().Name -eq "AzureStorageTable")
             {
-    			$results += $table.CloudTable.Execute([Microsoft.WindowsAzure.Storage.Table.TableOperation]::Delete($entityToDelete))
+    			$results += $table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::Delete(`$entityToDelete)"))
             }
             elseif ($table.GetType().Name -eq "CloudTable")
             {
