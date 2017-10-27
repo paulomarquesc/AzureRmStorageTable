@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.0.0.19
+* Very minor update, changed a variable name on Get-AzureStorageTableTable function
+
+## Version 1.0.0.18
+* Renamed the parameter -databasename to -cosmosDBAccount on Get-AzureStorageTableTable, -databasename is an alias to maintain compatibility 
+
 ## Version 1.0.0.17
 * Fixed a bug with Get-AzureStorageTableTable function where it was returning two objects a boolean and the cloudtable when using Cosmos DB.
 
