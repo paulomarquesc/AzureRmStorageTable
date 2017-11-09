@@ -437,9 +437,12 @@ function Get-AzureStorageTableRowByColumnName
 		[Parameter(Mandatory=$true)]
 		[string]$columnName,
 
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="byString",Mandatory=$true)]
 		[AllowEmptyString()]
 		[string]$value,
+
+		[Parameter(ParameterSetName="byGuid",Mandatory=$true)]
+		[guid]$guidValue,
 
 		[Parameter(Mandatory=$true)]
 		[validateSet("Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual")]
@@ -452,8 +455,15 @@ function Get-AzureStorageTableRowByColumnName
     {
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
 
-		[string]$filter = `
-			[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::$operator,$value)
+		if ($PSCmdlet.ParameterSetName -eq "byString") {
+			[string]$filter = `
+				[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::$operator,$value)
+		}
+
+		if ($PSCmdlet.ParameterSetName -eq "byGuid") {
+			[string]$filter = `
+				[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterConditionForGuid($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::$operator,$guidValue)
+		}
 
 		$tableQuery.FilterString = $filter
 
@@ -472,8 +482,15 @@ function Get-AzureStorageTableRowByColumnName
         
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
-		[string]$filter = `
-			[Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::$operator,$value)
+		if ($PSCmdlet.ParameterSetName -eq "byString") {			
+			[string]$filter = `
+				[Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::GenerateFilterCondition($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::$operator,$value)
+		}
+
+		if ($PSCmdlet.ParameterSetName -eq "byGuid") {
+			[string]$filter = `
+				[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterConditionForGuid($columnName,[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::$operator,$guidValue)
+		}
 
 		$tableQuery.FilterString = $filter
   	    $result = $table.ExecuteQuery($tableQuery)
