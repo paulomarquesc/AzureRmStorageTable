@@ -236,7 +236,7 @@ function Add-StorageTableRow
 		[AllowEmptyString()]
         [String]$rowKey,
 
-		[Parameter(Mandatory=$true)]
+		[Parameter(Mandatory=$false)]
         [hashtable]$property
 	)
 	
