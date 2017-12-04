@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.0.0.21
+* Azure Storage Table automatic Timestamp system column is now renamed to TableTimestamp in order to avoid conflict with a possible (very possible) existence of Timestamp included by applications as an entity's property. 
+* Cmdlet Add-StorageTableRow now has the property parameter as an optional parameter
+* Get-AzureStorageTableRowByColumnName cmdlet now supports guid values throught the guidValue parameter
+
 ## Version 1.0.0.20
 * Implemented some measures in order to avoid conflicts between different assembly versions, more specifically Microsoft.WindowsAzure.Storage.Dll.
 
