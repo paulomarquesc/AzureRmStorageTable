@@ -255,7 +255,10 @@ function Add-StorageTableRow
     # Adding the additional columns to the table entity
 	foreach ($prop in $property.Keys)
 	{
-		$entity.Properties.Add($prop, $property.Item($prop))
+		if ($prop -ne "TableTimestamp")
+		{
+			$entity.Properties.Add($prop, $property.Item($prop))
+		}
 	}
     
     # Adding the dynamic table entity to the table
@@ -612,7 +615,7 @@ function Update-AzureStorageTableRow
 	# Iterating over PS Object properties to add to the updated entity 
 	foreach ($prop in $entity.psobject.Properties)
 	{
-		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag"))
+		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp"))
 		{
 			$updatedEntity.Properties.Add($prop.name, $prop.Value)
 		}
