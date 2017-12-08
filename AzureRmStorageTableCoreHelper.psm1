@@ -323,18 +323,35 @@ function Get-AzureStorageTableRowAll
 	param
 	(
 		[Parameter(Mandatory=$true)]
-		$table
+		$table,
+
+		[Parameter(Mandatory=$false)]
+		[string[]]$columns
 	)
 
 	# No filtering
     if ($table.GetType().Name -eq "AzureStorageTable")
     {
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
     elseif ($table.GetType().Name -eq "CloudTable")
     {
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
   	    $result = $table.ExecuteQuery($tableQuery)
     }
 
@@ -369,9 +386,12 @@ function Get-AzureStorageTableRowByPartitionKey
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
-		[string]$partitionKey
+		[string]$partitionKey,
+
+		[Parameter(Mandatory=$false)]
+		[string[]]$columns
 	)
-	
+
 	# Filtering by Partition Key
 
     if ($table.GetType().Name -eq "AzureStorageTable")
@@ -383,6 +403,14 @@ function Get-AzureStorageTableRowByPartitionKey
 			[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal,$partitionKey)
 
 		$tableQuery.FilterString = $filter
+
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
 
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
@@ -397,6 +425,14 @@ function Get-AzureStorageTableRowByPartitionKey
 			[Microsoft.WindowsAzure.Storage.Table.QueryComparisons, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35]::Equal,$partitionKey)
 
 		$tableQuery.FilterString = $filter
+
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
 
   	    $result = $table.ExecuteQuery($tableQuery)
     }
@@ -532,7 +568,10 @@ function Get-AzureStorageTableRowByCustomFilter
 		$table,
 
 		[Parameter(Mandatory=$true)]
-		[string]$customFilter
+		[string]$customFilter,
+
+		[Parameter(Mandatory=$false)]
+		[string[]]$columns
 	)
 	
 	# Filtering by Partition Key
@@ -543,6 +582,14 @@ function Get-AzureStorageTableRowByCustomFilter
 
 		$tableQuery.FilterString = $customFilter
 
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
+
 	    $result = $table.CloudTable.ExecuteQuery($tableQuery)
     }
     elseif ($table.GetType().Name -eq "CloudTable")
@@ -550,6 +597,14 @@ function Get-AzureStorageTableRowByCustomFilter
 		$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery, Microsoft.WindowsAzure.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 
 		$tableQuery.FilterString = $customFilter
+
+		if ($columns) {
+			$list = New-Object System.Collections.Generic.List[string]
+			foreach ($column in $columns) {
+				$list.Add($column)
+			}
+			$tableQuery.SelectColumns = $list
+		}
 
   	    $result = $table.ExecuteQuery($tableQuery)
     }
