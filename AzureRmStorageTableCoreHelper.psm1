@@ -41,7 +41,8 @@ function GetLatestFullAssemblyName
 	return ($sanitazedAssemblyList | Sort-Object version -Descending)[0]
 }
 
-
+# Getting latest Microsoft.WindowsAzure.Storage.dll full Assembly name 
+$assemblySN = (GetLatestFullAssemblyName -dllName "Microsoft.WindowsAzure.Storage.dll").fullname
 
 function Test-AzureStorageTableEmptyKeys
 {
@@ -100,35 +101,23 @@ function Get-AzureStorageTableTable
     {
         "AzureRmTableStorage"
             {
-				# Getting latest Microsoft.WindowsAzure.Storage.dll full Assembly name 
-				$assemblySN = (GetLatestFullAssemblyName -dllName Microsoft.WindowsAzure.Storage.dll).fullname
-
 				$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccountName).Context	
-
-                [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
-
-				if ($table -eq $null)
-				{
-					[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = New-AzureStorageTable -Name $tableName -Context $saContext
-				}
-
                 $nullTableErrorMessage = "Table $tableName could not be retrieved from Storage Account $storageAccountName on resource group $resourceGroupName"
             }
         "AzureTableStorage"
             {
 				$saContext = (Get-AzureStorageAccount -StorageAccountName $storageAccountName).Context
-
-                [Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
-
-				if ($table -eq $null)
-				{
-					[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = New-AzureStorageTable -Name $tableName -Context $saContext
-				}
-
                 $nullTableErrorMessage = "Table $tableName could not be retrieved from Classic Storage Account $storageAccountName"
-
             }
     }
+
+	[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = Get-AzureStorageTable -Name $tableName -Context $saContext -ErrorAction SilentlyContinue
+
+	# Creating a new table if one does not exist
+	if ($table -eq $null)
+	{
+		[Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable]$table = New-AzureStorageTable -Name $tableName -Context $saContext
+	}
 
     # Checking if there a table got returned
     if ($table -eq $null)
