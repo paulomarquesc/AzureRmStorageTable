@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 1.0.0.22
+* Removed support for Cosmos DB Tables since it will have its own module
+
 ## Version 1.0.0.21
 * Azure Storage Table automatic Timestamp system column is now renamed to TableTimestamp in order to avoid conflict with a possible (very possible) existence of Timestamp included by applications as an entity's property. 
 * Cmdlet Add-StorageTableRow now has the property parameter as an optional parameter
