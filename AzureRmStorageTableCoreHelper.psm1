@@ -101,7 +101,7 @@ function Get-AzureStorageTableTable
         "AzureRmTableStorage"
             {
 				# Getting latest Microsoft.WindowsAzure.Storage.dll full Assembly name 
-				#$assemblySN = (GetLatestFullAssemblyName -dllName Microsoft.WindowsAzure.Storage.dll).fullname
+				$assemblySN = (GetLatestFullAssemblyName -dllName Microsoft.WindowsAzure.Storage.dll).fullname
 
 				$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccountName).Context	
 
