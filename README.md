@@ -16,7 +16,6 @@ This module supports *Azure Storage Tables*. Cosmos DB support was removed and i
     Install-Module AzureRmStorageTable
 
 
-
 Below you will get the help content of every function that is exposed through the AzureRmStorageTable module.
 
 # Get-AzureStorageTableTable
