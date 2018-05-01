@@ -8,13 +8,17 @@ This module supports *Azure Storage Tables*. Cosmos DB support was removed and i
 
 ## Quick Setup
 1. In a Windows 10/2016 execute the following cmdlets in order to install required modules
+    ```powershell
     Install-Module AzureRm.Storage -AllowClobber -Force
     Install-Module AzureRM.Profile  -AllowClobber -Force
     Install-Module AzureRM.Resources -AllowClobber -Force   
     Install-Module Azure.Storage -AllowClobber -Force
+    ```
+    
 1. Install AzureRmStorageTable
+    ```powershell
     Install-Module AzureRmStorageTable
-
+    ```
 
 Below you will get the help content of every function that is exposed through the AzureRmStorageTable module.
 
