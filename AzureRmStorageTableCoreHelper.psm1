@@ -167,7 +167,7 @@ function Add-StorageTableRow
         [String]$rowKey,
 
 		[Parameter(Mandatory=$false)]
-        [hashtable]$property
+        [hashtable]$property,
 	[Switch]$UpdateExisting
 	)
 	
