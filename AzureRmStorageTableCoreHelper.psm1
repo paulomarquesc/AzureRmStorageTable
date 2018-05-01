@@ -144,6 +144,8 @@ function Add-StorageTableRow
 		Identifies a row within a partition
 	.PARAMETER Property
 		Hashtable with the columns that will be part of the entity. e.g. @{"firstName"="Paulo";"lastName"="Marques"}
+	.PARAMETER UpdateExisting
+		Signalizes that command should update existing row, if such found by partitionKey and rowKey. If not found, new row is added.
 	.EXAMPLE
 		# Adding a row
 		$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
@@ -165,7 +167,8 @@ function Add-StorageTableRow
         [String]$rowKey,
 
 		[Parameter(Mandatory=$false)]
-        [hashtable]$property
+        [hashtable]$property,
+	[Switch]$UpdateExisting
 	)
 	
 	# Creates the table entity with mandatory partitionKey and rowKey arguments
@@ -179,8 +182,14 @@ function Add-StorageTableRow
 			$entity.Properties.Add($prop, $property.Item($prop))
 		}
 	}
-    
- 	return ($table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::insert(`$entity)")))
+    	if($UpdateExisting)
+	{
+		return ($table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::insertorreplace(`$entity)")))
+	}
+	else
+	{
+ 		return ($table.CloudTable.Execute((invoke-expression "[Microsoft.WindowsAzure.Storage.Table.TableOperation,$assemblySN]::insert(`$entity)")))
+	}
  
 }
 
