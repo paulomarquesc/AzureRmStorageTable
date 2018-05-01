@@ -1,4 +1,4 @@
-﻿@{
+@{
 
 # ID used to uniquely identify this module
 GUID = '8a32725b-b220-42a5-89d4-17646534dba9'
@@ -19,7 +19,7 @@ Description = 'Sample functions to add/retrieve/update entities on Azure Storage
 HelpInfoUri = 'https://blogs.technet.microsoft.com/paulomarques/2017/01/17/working-with-azure-storage-tables-from-powershell/'
 
 # Version number of this module
-ModuleVersion = '1.0.0.22'
+ModuleVersion = '1.0.0.23'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'
