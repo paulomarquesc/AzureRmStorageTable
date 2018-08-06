@@ -159,6 +159,23 @@ Describe "AzureRmStorageTable" {
     #         $entity.PartitionKey | Should be $expectedPK
     #         $entity.RowKey | Should be $expectedRK
     #     }
+
+    #    It "Can get entity by partion key and row key" {
+    #         $expectedPK = "pk1"
+    #         $expectedRK = "rk1"
+
+    #         Add-StorageTableRow -table $tableInsert `
+    #             -partitionKey $expectedPK `
+    #             -rowKey $expectedRK `
+    #             -property @{}
+
+    #         $entity = Get-AzureStorageTableRowByPartitionKeyRowKey -table $tableInsert `
+    #                    -partitionKey $expectedPK -rowKey $expectedRK
+
+    #         $entity.PartitionKey | Should be $expectedPK
+    #         $entity.RowKey | Should be $expectedRK
+    #     }
+
     # }
 
     # Context "Remove-AzureStorageTableRow" {

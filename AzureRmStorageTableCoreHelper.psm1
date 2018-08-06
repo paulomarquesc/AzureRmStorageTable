@@ -308,6 +308,68 @@ function Get-AzureStorageTableRowByPartitionKey
 	}
 }
 
+function Get-AzureStorageTableRowByPartitionKeyRowKey
+{
+	<#
+	.SYNOPSIS
+		Returns one entitie based on Partition Key and RowKey
+	.DESCRIPTION
+		Returns one entitie based on Partition Key and RowKey
+	.PARAMETER Table
+		Table object of type Microsoft.WindowsAzure.Commands.Common.Storage.ResourceModel.AzureStorageTable to retrieve entities
+	.PARAMETER PartitionKey
+		Identifies the table partition
+	.PARAMETER RowKey
+        Identifies the row key in the partition
+	.EXAMPLE
+		# Getting rows by Partition Key and Row Key
+		$saContext = (Get-AzureRmStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
+		$table = Get-AzureStorageTable -Name $tableName -Context $saContext
+		Get-AzureStorageTableRowByPartitionKeyRowKey -table $table -partitionKey $newPartitionKey -rowKey $newRowKey
+	#>
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory=$true)]
+		$table,
+
+		[Parameter(Mandatory=$true)]
+		[AllowEmptyString()]
+		[string]$partitionKey,
+
+		[Parameter(Mandatory=$true)]
+		[AllowEmptyString()]
+		[string]$rowKey
+
+	)
+	
+	# Filtering by Partition Key and Row Key
+
+
+	$tableQuery = New-Object -TypeName "Microsoft.WindowsAzure.Storage.Table.TableQuery,$assemblySN"
+
+	[string]$filter1 = `
+		[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("PartitionKey",`
+		[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal,$partitionKey)
+
+	[string]$filter2 = `
+		[Microsoft.WindowsAzure.Storage.Table.TableQuery]::GenerateFilterCondition("RowKey",`
+		[Microsoft.WindowsAzure.Storage.Table.QueryComparisons]::Equal,$rowKey)
+
+        [string]$filter = [Microsoft.WindowsAzure.Storage.Table.TableQuery]::CombineFilters($filter1,"and",$filter2)
+
+
+	$tableQuery.FilterString = $filter
+
+	$result = $table.CloudTable.ExecuteQuery($tableQuery)
+
+	if (-not [string]::IsNullOrEmpty($result))
+	{
+		return (Get-PSObjectFromEntity -entityList $result)
+	}
+}
+
+
 function Get-AzureStorageTableRowByColumnName
 {
 	<#
