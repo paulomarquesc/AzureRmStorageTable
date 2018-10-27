@@ -1,7 +1,7 @@
 # Release Notes
 
 ## Version 1.0.0.23
-* Added parameter UpdateExisting to Add-StorageTableRow so if a row already exists you can upadte its content in a single operation 
+* Added parameter UpdateExisting to Add-StorageTableRow so if a row already exists you can update its content in a single operation 
 
 ## Version 1.0.0.22
 * Removed support for Cosmos DB Tables since it will have its own module
