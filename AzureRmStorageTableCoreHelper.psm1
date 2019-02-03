@@ -445,10 +445,39 @@ function Get-AzureStorageTableRow
 	.DESCRIPTION
 		Returns all rows/entities from a storage table - no Filtering
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities (common to all parameter sets)
+	.PARAMETER PartitionKey
+		Identifies the table partition (byPartitionKey and byPartRowKeys parameter sets)
+	.PARAMETER RowKey
+		Identifies the row key in the partition (byPartRowKeys parameter set)
+	.PARAMETER ColumnName
+		Column name to compare the value to (byColummnString and byColummnGuid parameter sets)
+	.PARAMETER Value
+		Value that will be looked for in the defined column (byColummnString parameter set)
+	.PARAMETER GuidValue
+		Value that will be looked for in the defined column as Guid (byColummnGuid parameter set)
+	.PARAMETER Operator
+		Supported comparison Operator. Valid values are "Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual" (byColummnString and byColummnGuid parameter sets)
+	.PARAMETER CustomFilter
+		Custom Filter string (byCustomFilter parameter set)
 	.EXAMPLE
 		# Getting all rows
-		Get-AzureStorageTableRowAll -Table $Table
+		Get-AzureStorageTableRow -Table $Table
+
+		# Getting rows by partition key
+		Get-AzureStorageTableRow -Table $table -partitionKey NewYorkSite
+
+		# Getting rows by partition and row key
+		Get-AzureStorageTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
+
+		# Getting rows by Columnm Name using Guid columns in table
+		Get-AzureStorageTableRow -Table $Table -ColumnName "id" -guidvalue "5fda3053-4444-4d23-b8c2-b26e946338b6" -operator Equal
+
+		# Getting rows by Columnm Name using string columns in table
+		Get-AzureStorageTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -operator Equal
+
+		# Getting rows using Custom Filter
+		Get-AzureStorageTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
 	#>
 	[CmdletBinding()]
 	param
