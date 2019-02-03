@@ -34,8 +34,10 @@ CLRVersion = '2.0'
 NestedModules = @('AzureRmStorageTableCoreHelper.psm1')
 
 FunctionsToExport = @(  'Add-StorageTableRow',
+                        'Get-AzureStorageTableRow',
                         'Get-AzureStorageTableRowAll',
                         'Get-AzureStorageTableRowByPartitionKeyRowKey',
+                        'Get-AzureStorageTableRowByPartitionKey',
                         'Get-AzureStorageTableRowByColumnName',
                         'Get-AzureStorageTableRowByCustomFilter',
                         'Update-AzureStorageTableRow',
