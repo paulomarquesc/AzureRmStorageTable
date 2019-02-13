@@ -26,8 +26,17 @@ $DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed
 
 # Module Functions
 
-function TestAzureStorageTableEmptyKeys($PartitionKey, $RowKey)
+function TestAzureStorageTableEmptyKeys
 {
+	param
+	(
+		[Parameter(Mandatory=$true)]
+		$PartitionKey,
+
+		[Parameter(Mandatory=$true)]
+		$RowKey
+	)
+
     $CosmosEmptyKeysErrorMessage = "Cosmos DB table API does not accept empty partition or row keys when using CloudTable.Execute operation, because of this we are disabling this capability in this module and it will not proceed." 
 
     if ([string]::IsNullOrEmpty($PartitionKey) -or [string]::IsNullOrEmpty($RowKey))
@@ -36,8 +45,13 @@ function TestAzureStorageTableEmptyKeys($PartitionKey, $RowKey)
     }
 }
 
-function ExecuteQueryAsync($TableQuery)
+function ExecuteQueryAsync
 {
+	param
+	(
+		[Parameter(Mandatory=$true)]
+		$TableQuery
+	)
 	# Internal function
 	# Executes query in async mode
 
@@ -564,7 +578,7 @@ function Get-AzureStorageTableRow
 	# Getting results
 	if (($TableQuery.FilterString -ne $null) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
 	{
-		$Result = ExecuteQueryAsync($TableQuery)
+		$Result = ExecuteQueryAsync -TableQuery $TableQuery
 
 		if (-not [string]::IsNullOrEmpty($Result.Result.Results))
 		{
