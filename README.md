@@ -653,7 +653,7 @@ Accept wildcard characters: False
 
 ### Before you run
 
-Please make sure that your Azure Storage Emulator is up and running if you want to run all tests agains it.
+Please make sure that your Azure Storage Emulator is up and running if you want to run all tests against it.
 
 ### Run
 
