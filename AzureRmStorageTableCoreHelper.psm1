@@ -312,7 +312,7 @@ function Get-AzureStorageTableRowByPartitionKeyRowKey
 {
 	<#
 	.SYNOPSIS
-		Returns one entitie based on Partition Key and RowKey
+		Returns one entity based on Partition Key and RowKey
 	.DESCRIPTION
 		Returns one entitie based on Partition Key and RowKey
 	.PARAMETER Table
