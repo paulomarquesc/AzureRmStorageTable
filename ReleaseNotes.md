@@ -21,7 +21,7 @@
 * Renamed the parameter -databasename to -cosmosDBAccount on Get-AzureStorageTableTable, -databasename is an alias to maintain compatibility 
 
 ## Version 1.0.0.17
-* Fixed a bug with Get-AzureStorageTableTable function where it was returning two objects a boolean and the cloudtable when using Cosmos DB.
+* Fixed a bug with the Get-AzureStorageTableTable function where it was returning two objects, a boolean and the cloudtable when using Cosmos DB.
 
 ## Version 1.0.0.16
 * Fixed an issue with the parameter set for the Cosmos DB, it was missing the resource group parameter on it and therefore causing an error saying that the parameterset could not be identified.
