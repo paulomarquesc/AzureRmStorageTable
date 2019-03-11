@@ -25,7 +25,7 @@ Adds a row/entity to a specified table
 ### EXAMPLE 1
 ```powershell
 # Adding a row
-Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey (\[guid\]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
 ```
 
 ## PARAMETERS
