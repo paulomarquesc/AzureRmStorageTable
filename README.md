@@ -20,16 +20,18 @@ This module supports *Azure Storage Tables*. Cosmos DB support was removed and i
 
 Below you will get the help content of every function that is exposed through the AzureRmStorageTable module:
 
-[Add-AzTableRow](docs/Add-AzTableRow.md)
-[Get-AzTableRow](docs/Get-AzTableRow.md)
-[Get-AzTableRowAll](docs/Get-AzTableRowAll.md)
-[Get-AzTableRowByColumnName](docs/Get-AzTableRowByColumnName.md)
-[Get-AzTableRowByCustomFilter](docs/Get-AzTableRowByCustomFilter.md)
-[Get-AzTableRowByPartitionKey](docs/Get-AzTableRowByPartitionKey.md)
-[Get-AzTableRowByPartitionKeyRowKey](docs/Get-AzTableRowByPartitionKeyRowKey.md)
-[Get-AzTableTable](docs/Get-AzTableTable.md)
-[Remove-AzTableRow](docs/Remove-AzTableRow.md)
-[Update-AzTableRow](docs/Update-AzTableRow.md)
+* [Add-AzTableRow](docs/Add-AzTableRow.md)
+* [Get-AzTableRow](docs/Get-AzTableRow.md)
+* [Get-AzTableRowAll](docs/Get-AzTableRowAll.md)
+* [Get-AzTableRowByColumnName](docs/Get-AzTableRowByColumnName.md)
+* [Get-AzTableRowByCustomFilter](docs/Get-AzTableRowByCustomFilter.md)
+* [Get-AzTableRowByPartitionKey](docs/Get-AzTableRowByPartitionKey.md)
+* [Get-AzTableRowByPartitionKeyRowKey](docs/Get-AzTableRowByPartitionKeyRowKey.md)
+* [Get-AzTableTable](docs/Get-AzTableTable.md)
+* [Remove-AzTableRow](docs/Remove-AzTableRow.md)
+* [Update-AzTableRow](docs/Update-AzTableRow.md)
+
+> Note: Cmdlets Get-AzTableRowAll, Get-AzTableRowByColumnName, Get-AzTableRowByCustomFilter, Get-AzTableRowByPartitionKey, Get-AzTableRowByPartitionKeyRowKey, Get-AzTableRowByPartitionKeyRowKey are deprecated and **Get-AzTableRow** should be used instead, these will all be removed in a future release of this module.
 
 # Running automated tests
 
