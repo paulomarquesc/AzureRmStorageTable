@@ -13,33 +13,33 @@ Returns all rows/entities from a storage table - no Filtering
 ## SYNTAX
 
 ### byCustomFilter
-```
+```powershell
 Get-AzTableRow [-Table <Object>] -CustomFilter <String> [<CommonParameters>]
 ```
 
 ### byColummnGuid
-```
+```powershell
 Get-AzTableRow [-Table <Object>] [-ColumnName <String>] -GuidValue <Guid> [-Operator <String>]
  [<CommonParameters>]
 ```
 
 ### byColummnString
-```
+```powershell
 Get-AzTableRow [-Table <Object>] -ColumnName <String> -Value <String> -Operator <String> [<CommonParameters>]
 ```
 
 ### byPartRowKeys
-```
+```powershell
 Get-AzTableRow [-Table <Object>] [-PartitionKey <String>] -RowKey <String> [<CommonParameters>]
 ```
 
 ### byPartitionKey
-```
+```powershell
 Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>]
 ```
 
 ### GetAll
-```
+```powershell
 Get-AzTableRow -Table <Object> [<CommonParameters>]
 ```
 
@@ -49,10 +49,8 @@ Returns all rows/entities from a storage table - no Filtering
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting all rows
-```
-
 Get-AzTableRow -Table $Table
 
 # Getting rows by partition key
@@ -69,6 +67,7 @@ Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -oper
 
 # Getting rows using Custom Filter
 Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+```
 
 ## PARAMETERS
 

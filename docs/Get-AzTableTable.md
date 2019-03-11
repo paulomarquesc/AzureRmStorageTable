@@ -12,7 +12,7 @@ Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview 
 
 ## SYNTAX
 
-```
+```powershell
 Get-AzTableTable -resourceGroup <String> -TableName <String> -storageAccountName <String> [<CommonParameters>]
 ```
 
@@ -22,14 +22,13 @@ Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview 
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting storage table object
-```
-
 $resourceGroup = "myResourceGroup"
 $storageAccount = "myStorageAccountName"
 $TableName = "table01"
 $Table = Get-AzTabletable -resourceGroup $resourceGroup -tableName $TableName -storageAccountName $storageAccount
+```
 
 ## PARAMETERS
 

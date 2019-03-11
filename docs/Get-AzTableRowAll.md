@@ -12,7 +12,7 @@ Returns all rows/entities from a storage table - no Filtering
 
 ## SYNTAX
 
-```
+```powershell
 Get-AzTableRowAll [-Table] <Object> [<CommonParameters>]
 ```
 
@@ -22,11 +22,10 @@ Returns all rows/entities from a storage table - no Filtering
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting all rows
-```
-
 Get-AzTableRowAll -Table $Table
+```
 
 ## PARAMETERS
 

@@ -281,7 +281,7 @@ function Get-AzTableRowByPartitionKey
 		Identifies the table partition
 	.EXAMPLE
 		# Getting rows by partition Key
-		Get-AzTableRowByPartitionKey -Table $Table -PartitionKey $newPartitionKey
+		Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey"
 	#>
 	[CmdletBinding()]
 	param
@@ -320,7 +320,7 @@ function Get-AzTableRowByPartitionKeyRowKey
         Identifies the row key in the partition
 	.EXAMPLE
 		# Getting rows by Partition Key and Row Key
-		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey $newPartitionKey -RowKey $newRowKey
+		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345"	
 	#>
 	[CmdletBinding()]
 	param
@@ -424,9 +424,8 @@ function Get-AzTableRowByCustomFilter
 		Custom Filter string.
 	.EXAMPLE
 		# Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
-		$saContext = (Get-AzStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
-		$Table = Get-AzTable -Name $TableName -Context $saContext
-		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+	$MyFilter = "(firstName eq 'User1')"
+		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $MyFilter
 	.EXAMPLE
 		# Getting row by firstname by using text Filter directly (oData Filter format)
 		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"

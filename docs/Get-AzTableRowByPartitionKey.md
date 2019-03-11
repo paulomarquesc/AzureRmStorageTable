@@ -12,7 +12,7 @@ Returns one or more rows/entities based on Partition Key
 
 ## SYNTAX
 
-```
+```powershell
 Get-AzTableRowByPartitionKey [-Table] <Object> [-PartitionKey] <String> [<CommonParameters>]
 ```
 
@@ -22,11 +22,10 @@ Returns one or more rows/entities based on Partition Key
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting rows by partition Key
+Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey"
 ```
-
-Get-AzTableRowByPartitionKey -Table $Table -PartitionKey $newPartitionKey
 
 ## PARAMETERS
 

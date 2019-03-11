@@ -12,7 +12,7 @@ Returns one or more rows/entities based on custom Filter.
 
 ## SYNTAX
 
-```
+```powershell
 Get-AzTableRowByCustomFilter [-Table] <Object> [-CustomFilter] <String> [<CommonParameters>]
 ```
 
@@ -24,20 +24,17 @@ built using the Microsoft.Azure.Cosmos.Table.TableQuery class or direct text.
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
+$MyFilter = "(firstName eq 'User1')"
+Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $MyFilter
 ```
-
-$saContext = (Get-AzStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
-$Table = Get-AzTable -Name $TableName -Context $saContext
-Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
 
 ### EXAMPLE 2
-```
+```powershell
 # Getting row by firstname by using text Filter directly (oData Filter format)
-```
-
 Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"
+```
 
 ## PARAMETERS
 

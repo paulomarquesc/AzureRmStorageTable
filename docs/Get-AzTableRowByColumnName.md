@@ -13,13 +13,13 @@ Returns one or more rows/entities based on a specified column and its value
 ## SYNTAX
 
 ### byString
-```
+```powershell
 Get-AzTableRowByColumnName -Table <Object> -ColumnName <String> -Value <String> -Operator <String>
  [<CommonParameters>]
 ```
 
 ### byGuid
-```
+```powershell
 Get-AzTableRowByColumnName -Table <Object> -ColumnName <String> -GuidValue <Guid> -Operator <String>
  [<CommonParameters>]
 ```
@@ -30,11 +30,10 @@ Returns one or more rows/entities based on a specified column and its value
 ## EXAMPLES
 
 ### EXAMPLE 1
-```
+```powershell
 # Getting row by firstname
-```
-
 Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal
+```
 
 ## PARAMETERS
 
