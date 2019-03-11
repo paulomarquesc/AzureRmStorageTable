@@ -12,21 +12,23 @@
 	
 #>
 
+#Requires -modules Az.Storage, Az.Resources
+
 # Loading DLLS
-$path = $PSScriptRoot
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Core.dll'))
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Edm.dll'))
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Spatial.dll'))
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Newtonsoft.Json.dll'))
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.DocumentDB.Core.dll'))
-[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.Cosmos.Table.dll'))
+#$path = $PSScriptRoot
+#[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Core.dll'))
+#[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Edm.dll'))
+# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Spatial.dll'))
+# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Newtonsoft.Json.dll'))
+# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.DocumentDB.Core.dll'))
+# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.Cosmos.Table.dll'))
 
 # Deprecated Message
-$DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed in the next release, please use Get-AzureStorageTableRow instead."
+$DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed in the next release, please use Get-AzTableRow instead."
 
 # Module Functions
 
-function TestAzureStorageTableEmptyKeys
+function TestAzTableEmptyKeys
 {
 	param
 	(
@@ -96,7 +98,7 @@ function GetPSObjectFromEntity($entityList)
 }
 
 
-function Get-AzureStorageTableTable
+function Get-AzTableTable
 {
 	<#
 	.SYNOPSIS
@@ -114,7 +116,7 @@ function Get-AzureStorageTableTable
 		$resourceGroup = "myResourceGroup"
 		$storageAccount = "myStorageAccountName"
 		$TableName = "table01"
-		$Table = Get-AzureStorageTabletable -resourceGroup $resourceGroup -tableName $TableName -storageAccountName $storageAccount
+		$Table = Get-AzTabletable -resourceGroup $resourceGroup -tableName $TableName -storageAccountName $storageAccount
 	#>
 	[CmdletBinding()]
 	param
@@ -170,7 +172,7 @@ function Get-AzureStorageTableTable
 	return $Table
 }
 
-function Add-StorageTableRow
+function Add-AzTableRow
 {
 	<#
 	.SYNOPSIS
@@ -189,7 +191,7 @@ function Add-StorageTableRow
 		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
 	.EXAMPLE
 		# Adding a row
-		Add-StorageTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
 	#>
 	[CmdletBinding()]
 	param
@@ -233,7 +235,7 @@ function Add-StorageTableRow
  
 }
 
-function Get-AzureStorageTableRowAll
+function Get-AzTableRowAll
 {
 	<#
 	.SYNOPSIS
@@ -244,7 +246,7 @@ function Get-AzureStorageTableRowAll
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
 	.EXAMPLE
 		# Getting all rows
-		Get-AzureStorageTableRowAll -Table $Table
+		Get-AzTableRowAll -Table $Table
 	#>
 	[CmdletBinding()]
 	param
@@ -257,7 +259,7 @@ function Get-AzureStorageTableRowAll
 
 	# No Filtering
 
-	$Result = Get-AzureStorageTableRow -Table $Table
+	$Result = Get-AzTableRow -Table $Table
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -266,7 +268,7 @@ function Get-AzureStorageTableRowAll
 
 }
 
-function Get-AzureStorageTableRowByPartitionKey
+function Get-AzTableRowByPartitionKey
 {
 	<#
 	.SYNOPSIS
@@ -279,7 +281,7 @@ function Get-AzureStorageTableRowByPartitionKey
 		Identifies the table partition
 	.EXAMPLE
 		# Getting rows by partition Key
-		Get-AzureStorageTableRowByPartitionKey -Table $Table -PartitionKey $newPartitionKey
+		Get-AzTableRowByPartitionKey -Table $Table -PartitionKey $newPartitionKey
 	#>
 	[CmdletBinding()]
 	param
@@ -295,7 +297,7 @@ function Get-AzureStorageTableRowByPartitionKey
 	Write-Verbose $DeprecatedMessage -Verbose
 
 	# Filtering by Partition Key
-	$Result = Get-AzureStorageTableRow -Table $Table -PartitionKey $PartitionKey
+	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -303,7 +305,7 @@ function Get-AzureStorageTableRowByPartitionKey
 	}
 
 }
-function Get-AzureStorageTableRowByPartitionKeyRowKey
+function Get-AzTableRowByPartitionKeyRowKey
 {
 	<#
 	.SYNOPSIS
@@ -339,7 +341,7 @@ function Get-AzureStorageTableRowByPartitionKeyRowKey
 
 	Write-Verbose $DeprecatedMessage -Verbose
 
-	$Result = Get-AzureStorageTableRow -Table $Table -PartitionKey $PartitionKey -RowKey $RowKey
+	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey $RowKey
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -347,7 +349,7 @@ function Get-AzureStorageTableRowByPartitionKeyRowKey
 	}
 }
 
-function Get-AzureStorageTableRowByColumnName
+function Get-AzTableRowByColumnName
 {
 	<#
 	.SYNOPSIS
@@ -366,7 +368,7 @@ function Get-AzureStorageTableRowByColumnName
 		Supported comparison Operator. Valid values are "Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual"
 	.EXAMPLE
 		# Getting row by firstname
-		Get-AzureStorageTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal
+		Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal
 	#>
 	[CmdletBinding()]
 	param
@@ -395,11 +397,11 @@ function Get-AzureStorageTableRowByColumnName
 
 	if ($PSCmdlet.ParameterSetName -eq "byString")
 	{			
-		Get-AzureStorageTableRow -Table $Table -ColumnName $ColumnName -value $Value -Operator $Operator
+		Get-AzTableRow -Table $Table -ColumnName $ColumnName -value $Value -Operator $Operator
 	}
 	else
 	{
-		Get-AzureStorageTableRow -Table $Table -ColumnName $ColumnName -GuidValue $GuidValue -Operator $Operator
+		Get-AzTableRow -Table $Table -ColumnName $ColumnName -GuidValue $GuidValue -Operator $Operator
 	}
 
 	if (-not [string]::IsNullOrEmpty($Result))
@@ -408,7 +410,7 @@ function Get-AzureStorageTableRowByColumnName
 	}
 }
 
-function Get-AzureStorageTableRowByCustomFilter
+function Get-AzTableRowByCustomFilter
 {
 	<#
 	.SYNOPSIS
@@ -423,11 +425,11 @@ function Get-AzureStorageTableRowByCustomFilter
 	.EXAMPLE
 		# Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
 		$saContext = (Get-AzStorageAccount -ResourceGroupName $resourceGroup -Name $storageAccount).Context
-		$Table = Get-AzureStorageTable -Name $TableName -Context $saContext
-		Get-AzureStorageTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		$Table = Get-AzTable -Name $TableName -Context $saContext
+		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
 	.EXAMPLE
 		# Getting row by firstname by using text Filter directly (oData Filter format)
-		Get-AzureStorageTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"
+		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"
 	#>
 	[CmdletBinding()]
 	param
@@ -443,7 +445,7 @@ function Get-AzureStorageTableRowByCustomFilter
 
 	# Custom Filter
 
-	$Result = Get-AzureStorageTableRow -Table $Table -CustomFilter $CustomFilter
+	$Result = Get-AzTableRow -Table $Table -CustomFilter $CustomFilter
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -451,7 +453,7 @@ function Get-AzureStorageTableRowByCustomFilter
 	}
 }
 
-function Get-AzureStorageTableRow
+function Get-AzTableRow
 {
 	<#
 	.SYNOPSIS
@@ -476,22 +478,22 @@ function Get-AzureStorageTableRow
 		Custom Filter string (byCustomFilter parameter set)
 	.EXAMPLE
 		# Getting all rows
-		Get-AzureStorageTableRow -Table $Table
+		Get-AzTableRow -Table $Table
 
 		# Getting rows by partition key
-		Get-AzureStorageTableRow -Table $table -partitionKey NewYorkSite
+		Get-AzTableRow -Table $table -partitionKey NewYorkSite
 
 		# Getting rows by partition and row key
-		Get-AzureStorageTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
+		Get-AzTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
 
 		# Getting rows by Columnm Name using Guid columns in table
-		Get-AzureStorageTableRow -Table $Table -ColumnName "id" -guidvalue "5fda3053-4444-4d23-b8c2-b26e946338b6" -operator Equal
+		Get-AzTableRow -Table $Table -ColumnName "id" -guidvalue "5fda3053-4444-4d23-b8c2-b26e946338b6" -operator Equal
 
 		# Getting rows by Columnm Name using string columns in table
-		Get-AzureStorageTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -operator Equal
+		Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -operator Equal
 
 		# Getting rows using Custom Filter
-		Get-AzureStorageTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+		Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
 	#>
 	[CmdletBinding()]
 	param
@@ -568,6 +570,10 @@ function Get-AzureStorageTableRow
 	{
 		[string]$Filter = $CustomFilter
 	}
+	else
+	{
+		[string]$filter = $null	
+	}
 	
 	# Adding filter if not null
 	if (-not [string]::IsNullOrEmpty($Filter))
@@ -586,14 +592,13 @@ function Get-AzureStorageTableRow
 		}
 	}
 }
-
-function Update-AzureStorageTableRow
+function Update-AzTableRow
 {
 	<#
 	.SYNOPSIS
 		Updates a table entity
 	.DESCRIPTION
-		Updates a table entity. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzureStorageTableRow cmdlets available
+		Updates a table entity. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
 		and store in an object, change the necessary properties and then perform the update passing this modified entity back, through Pipeline or as argument.
 		Notice that this cmdlet accepts only one entity per execution. 
 		This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required
@@ -606,9 +611,9 @@ function Update-AzureStorageTableRow
 		# Updating an entity
 
 		[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"User1")
-		$person = Get-AzureStorageTableRowByCustomFilter -Table $Table -CustomFilter $Filter
+		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 		$person.lastName = "New Last Name"
-		$person | Update-AzureStorageTableRow -Table $Table
+		$person | Update-AzTableRow -Table $Table
 	#>
 	[CmdletBinding()]
 	param
@@ -647,13 +652,13 @@ function Update-AzureStorageTableRow
   
 }
 
-function Remove-AzureStorageTableRow
+function Remove-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Remove-AzureStorageTableRow - Removes a specified table row
+		Remove-AzTableRow - Removes a specified table row
 	.DESCRIPTION
-		Remove-AzureStorageTableRow - Removes a specified table row. It accepts multiple deletions through the Pipeline when passing entities returned from the Get-AzureStorageTableRow
+		Remove-AzTableRow - Removes a specified table row. It accepts multiple deletions through the Pipeline when passing entities returned from the Get-AzTableRow
 		available cmdlets. It also can delete a row/entity using Partition and Row Key properties directly.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
@@ -668,14 +673,14 @@ function Remove-AzureStorageTableRow
 		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
 		[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
 		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
-		$personToDelete = Get-AzureStorageTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
-		$personToDelete | Remove-AzureStorageTableRow -Table $Table
+		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		$personToDelete | Remove-AzTableRow -Table $Table
 	.EXAMPLE
 		# Deleting an entry by using PartitionKey and row key directly
-		Remove-AzureStorageTableRow -Table $Table -PartitionKey "TableEntityDemoFullList" -RowKey "399b58af-4f26-48b4-9b40-e28a8b03e867"
+		Remove-AzTableRow -Table $Table -PartitionKey "TableEntityDemoFullList" -RowKey "399b58af-4f26-48b4-9b40-e28a8b03e867"
 	.EXAMPLE
 		# Deleting everything
-		Get-AzureStorageTableRowAll -Table $Table | Remove-AzureStorageTableRow -Table $Table
+		Get-AzTableRowAll -Table $Table | Remove-AzTableRow -Table $Table
 	#>
 	[CmdletBinding()]
 	param
@@ -731,4 +736,16 @@ function Remove-AzureStorageTableRow
 }
 
 # Aliases
-New-Alias -Name Add-AzureStorageTableRow -Value Add-StorageTableRow
+New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow
+New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow
+
+New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable
+New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll
+New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey
+New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey
+New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName
+New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter
+New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow
+New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow
+New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow
+

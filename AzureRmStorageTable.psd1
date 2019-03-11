@@ -33,18 +33,20 @@ CLRVersion = '2.0'
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
 NestedModules = @('AzureRmStorageTableCoreHelper.psm1')
 
-FunctionsToExport = @(  'Add-StorageTableRow',
-                        'Get-AzureStorageTableRow',
-                        'Get-AzureStorageTableRowAll',
-                        'Get-AzureStorageTableRowByPartitionKeyRowKey',
-                        'Get-AzureStorageTableRowByPartitionKey',
-                        'Get-AzureStorageTableRowByColumnName',
-                        'Get-AzureStorageTableRowByCustomFilter',
-                        'Update-AzureStorageTableRow',
-                        'Remove-AzureStorageTableRow',
-                        'Get-AzureStorageTableTable'
+FunctionsToExport = @(  'Add-AzTableRow',
+                        'Get-AzTableRow',
+                        'Get-AzTableRowAll',
+                        'Get-AzTableRowByPartitionKeyRowKey',
+                        'Get-AzTableRowByPartitionKey',
+                        'Get-AzTableRowByColumnName',
+                        'Get-AzTableRowByCustomFilter',
+                        'Update-AzTableRow',
+                        'Remove-AzTableRow',
+                        'Get-AzTableTable'
                         )
 
 VariablesToExport = ''
+
+AliasesToExport = '*'
 
 }
