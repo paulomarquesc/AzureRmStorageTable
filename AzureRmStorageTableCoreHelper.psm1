@@ -128,47 +128,64 @@ function Get-AzTableTable
         [String]$TableName,
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
-        [String]$storageAccountName
+		[String]$storageAccountName,
+		
+		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
+        [switch]$UseStorageEmulator
 	)
 	
 	$nullTableErrorMessage = [string]::Empty
 
-	$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
-
-	if ($keys -ne $null)
+	if ($PSCmdlet.ParameterSetName -ne "AzStorageEmulator")
 	{
-		if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
+		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
+
+		if ($keys -ne $null)
 		{
-			$key = $keys.keys[0].value
-			$endpoint = "https://{0}.table.core.windows.net"
-			$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+			if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
+			{
+				$key = $keys.keys[0].value
+				$endpoint = "https://{0}.table.core.windows.net"
+				$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+			}
+			else
+			{
+				# Future Cosmos implementation
+				# $key = $keys.primaryMasterKey
+				# $endpoint = "https://{0}.table.Cosmos.azure.com"
+				# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
+			}
 		}
 		else
 		{
-			# Future Cosmos implementation
-			# $key = $keys.primaryMasterKey
-			# $endpoint = "https://{0}.table.Cosmos.azure.com"
-			# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
+			throw "An error ocurred while obtaining keys from $storageAccountName."    
 		}
+
+		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
+		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
+		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
+		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
+
+		$Table.CreateIfNotExistsAsync() | Out-Null
 	}
 	else
 	{
-		throw "An error ocurred while obtaining keys from $storageAccountName."    
+		# https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator
+		$nullTableErrorMessage = "Table $TableName could not be retrieved from Azure Storage Emulator"
+		$connString ="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1"
+		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
+		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
+		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
+
+		$Table.CreateIfNotExistsAsync() | Out-Null
 	}
 
-	$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
-	[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-	[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
-	[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
+	# Checking if there a table got returned
+	if ($Table -eq $null)
+	{
+		throw $nullTableErrorMessage
+	}
 
-	$Table.CreateIfNotExistsAsync() | Out-Null
-
-    # Checking if there a table got returned
-    if ($Table -eq $null)
-    {
-        throw $nullTableErrorMessage
-    }
-	
 	return $Table
 }
 
@@ -226,13 +243,12 @@ function Add-AzTableRow
 
     if ($UpdateExisting)
 	{
-		return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
 	}
 	else
 	{
- 		return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
 	}
- 
 }
 
 function Get-AzTableRowAll
@@ -645,10 +661,11 @@ function Update-AzTableRow
 	}
 
 	$updatedEntity.ETag = $entity.Etag
+	$updatedEntity.Timestamp = $entity.TableTimestamp
 
     # Updating the dynamic table entity to the table
-    return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
-  
+    # return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
 }
 
 function Remove-AzTableRow
@@ -720,11 +737,20 @@ function Remove-AzTableRow
 			$RowKey = $entity.RowKey
 		}
 
-		$entityToDelete = [Microsoft.Azure.Cosmos.Table.DynamicTableEntity]($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::Retrieve($PartitionKey,$RowKey))).Result.Result
-   
+		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
+		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
+		$TableQuery.FilterString = $Filter
+		$itemToDelete = (ExecuteQueryAsync -TableQuery $TableQuery).Result
+
+		# Converting DynamicTableEntity to TableEntity for deletion
+		$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
+		$entityToDelete.ETag = $itemToDelete.Etag
+		$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
+		$entityToDelete.RowKey = $itemToDelete.RowKey
+
 		if ($entityToDelete -ne $null)
 		{
-   			$Results += $Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
+   			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
 		}
 	}
 	
@@ -735,16 +761,58 @@ function Remove-AzTableRow
 }
 
 # Aliases
-New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow
-New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow
 
-New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable
-New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll
-New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey
-New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey
-New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName
-New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter
-New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow
-New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow
-New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow
+If (-not (Get-Alias -Name Add-StorageTableRow -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow
+}
 
+If (-not (Get-Alias -Name Add-AzureStorageTableRow -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableTable -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRowAll -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRowByPartitionKey -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRowByColumnName -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRowByCustomFilter -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter
+}
+
+If (-not (Get-Alias -Name Get-AzureStorageTableRow -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow
+}
+
+If (-not (Get-Alias -Name Update-AzureStorageTableRow -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow
+}
+
+If (-not (Get-Alias -Name Remove-AzureStorageTableRow -ErrorAction SilentlyContinue))
+{
+	New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow
+}

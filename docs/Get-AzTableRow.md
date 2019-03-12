@@ -60,7 +60,7 @@ Get-AzTableRow -Table $table -partitionKey NewYorkSite
 Get-AzTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
 
 # Getting rows by Columnm Name using Guid columns in table
-Get-AzTableRow -Table $Table -ColumnName "id" -guidvalue "5fda3053-4444-4d23-b8c2-b26e946338b6" -operator Equal
+Get-AzTableRow -Table $Table -ColumnName "id" -guidvalue ([guid]"5fda3053-4444-4d23-b8c2-b26e946338b6") -operator Equal
 
 # Getting rows by Columnm Name using string columns in table
 Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -operator Equal
