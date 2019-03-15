@@ -8,7 +8,7 @@ schema: 2.0.0
 # Get-AzTableTable
 
 ## SYNOPSIS
-Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
+Gets a Table object to be used in all other cmdlets.
 
 ## SYNTAX
 
@@ -17,7 +17,7 @@ Get-AzTableTable -resourceGroup <String> -TableName <String> -storageAccountName
 ```
 
 ## DESCRIPTION
-Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
+Gets a Table object to be used in all other cmdlets.
 
 ## EXAMPLES
 
@@ -33,7 +33,7 @@ $Table = Get-AzTabletable -resourceGroup $resourceGroup -tableName $TableName -s
 ## PARAMETERS
 
 ### -resourceGroup
-Resource Group where the Azure Storage Account or Cosmos DB are located
+Resource Group where the Azure Storage Account is located
 
 ```yaml
 Type: String

@@ -44,7 +44,7 @@ Get-AzTableRow -Table <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Returns all rows/entities from a storage table - no Filtering
+Used to return entities from a table with several options, this replaces all other Get-AzTable<XYZ> cmdlets.
 
 ## EXAMPLES
 

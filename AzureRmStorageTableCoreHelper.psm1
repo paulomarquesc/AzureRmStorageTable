@@ -102,11 +102,11 @@ function Get-AzTableTable
 {
 	<#
 	.SYNOPSIS
-		Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
+		Gets a Table object to be used in all other cmdlets.
 	.DESCRIPTION
-		Gets a Table object, it can be from Azure Storage Table or Cosmos DB in preview support.
+		Gets a Table object to be used in all other cmdlets.
 	.PARAMETER resourceGroup
-        Resource Group where the Azure Storage Account or Cosmos DB are located
+        Resource Group where the Azure Storage Account is located
     .PARAMETER tableName
         Name of the table to retrieve
     .PARAMETER storageAccountName
@@ -472,9 +472,9 @@ function Get-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Returns all rows/entities from a storage table - no Filtering
+		Used to return entities from a table with several options, this replaces all other Get-AzTable<XYZ> cmdlets.
 	.DESCRIPTION
-		Returns all rows/entities from a storage table - no Filtering
+		Used to return entities from a table with several options, this replaces all other Get-AzTable<XYZ> cmdlets.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities (common to all parameter sets)
 	.PARAMETER PartitionKey
