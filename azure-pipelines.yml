@@ -14,6 +14,33 @@ steps:
       #Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
       Import-Module Pester
+      try
+      {
+          $endpoint = Get-VstsEndpoint -Name $serviceName -Require
+          if (!$endpoint)
+          {
+              throw "Endpoint not found..."
+          }
+
+          $subscriptionId = $endpoint.Data.SubscriptionId
+          $tenantId = $endpoint.Auth.Parameters.TenantId
+          $servicePrincipalId = $endpoint.Auth.Parameters.servicePrincipalId
+          $servicePrincipalKey = $endpoint.Auth.Parameters.servicePrincipalKey
+
+          $spnKey = ConvertTo-SecureString $servicePrincipalKey -AsPlainText -Force
+          $credentials = New-Object System.Management.Automation.PSCredential($servicePrincipalId,$spnKey)
+
+          Add-AzureRmAccount -ServicePrincipal -TenantId $tenantId -Credential $credentials
+          Select-AzureRmSubscription -SubscriptionId $subscriptionId -Tenant $tenantId
+
+          $ctx = Get-AzureRmContext
+          Write-Host "Connected to subscription '$($ctx.Subscription)' and tenant '$($ctx.Tenant)'..."
+      }
+      catch
+      {
+          Write-Host "Authentication failed: $($_.Exception.Message)..." 
+      }
+
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).Subscription.id
       write-host "Location: $Location"
