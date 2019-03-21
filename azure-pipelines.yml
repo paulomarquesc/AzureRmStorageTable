@@ -4,11 +4,14 @@ pool:
 
 steps:
   - powershell: |
-      $Location = "$(Parameters.Location)"
-      $SubscriptionId = (Get-AzContext).Subscription.id
+      Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+      Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
       Import-Module Pester
-      $outputFile = ".\TEST-RESULTS.xml"
-      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
+      #$Location = "$(Parameters.Location)"
+      #$SubscriptionId = (Get-AzContext).Subscription.id
+      
+      #$outputFile = ".\TEST-RESULTS.xml"
+      #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
     displayName: "Run pester"
     
   - task: PublishTestResults@2
