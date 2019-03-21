@@ -17,7 +17,7 @@ steps:
       $SubscriptionId = (Get-AzContext).Subscription.id
        #$outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
-      azurePowerShellVersion: LatestVersion
+    azurePowerShellVersion: LatestVersion
 
 - task: PublishTestResults@2
   displayName: Publish Test Results
