@@ -1,0 +1,21 @@
+pool:
+  vmImage: vs2017-win2016
+
+
+steps:
+  - powershell: |
+      $Location = "$(Parameters.Location)"
+      $SubscriptionId = (Get-AzContext).Subscription.id
+      Import-Module Pester
+      $outputFile = ".\TEST-RESULTS.xml"
+      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
+    displayName: "Run pester"
+    
+  - task: PublishTestResults@2
+    displayName: Publish Test Results
+    inputs:
+      testRunTitle: Test Results for Pester
+      buildPlatform: Windows
+      testRunner: NUnit
+      testResultsFiles: ./TEST-RESULTS.xml
+      failTaskOnFailedTests: true
