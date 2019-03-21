@@ -53,4 +53,10 @@ Please make sure that your Azure Storage Emulator is up and running if you want 
 PS> Invoke-Pester
 ```
 
+To test on Azure instead of Storage Emmulator, use:
+
+```
+PS> Invoke-Pester @{Path="./Tests";Parameters=@{SubscriptionId='<your subscription id>';Location='<location>'}}
+```
+
 ![Invoke-Pester](AzureRmStorageTable-Pester.gif)
