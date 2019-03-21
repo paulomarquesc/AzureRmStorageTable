@@ -8,7 +8,7 @@ steps:
   inputs:
     azureSubscription: pmarques-azure-connection
     ScriptType: InlineScript
-   ConnectedServiceNameARM: : pmarques-azure-connection
+    ConnectedServiceNameARM: pmarques-azure-connection
     Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
