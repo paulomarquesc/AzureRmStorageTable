@@ -16,9 +16,9 @@ steps:
       Import-Module Pester
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).Subscription.id
+      Get-AzureRmContext | out-string
       write-host "Location: $Location"
       write-host "Subscription: $SubscriptionId"
-      get-azurermvm
        #$outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
     azurePowerShellVersion: LatestVersion
