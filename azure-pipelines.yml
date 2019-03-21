@@ -11,7 +11,8 @@ steps:
     ConnectedServiceNameSelector: ConnectedServiceNameARM
     ConnectedServiceNameARM: pmarques-azure-connection
     Inline: |
-      Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
+      Install-Module -Name Pester -Force -Scope CurrentUser
+      Install-Module Az -Force -Scope CurrentUser
       Import-Module Pester
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).SubscriptionId
