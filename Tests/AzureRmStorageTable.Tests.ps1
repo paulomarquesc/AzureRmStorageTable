@@ -1,41 +1,67 @@
+[CmdletBinding()]
+param
+(
+    [Parameter(Mandatory=$false,ParameterSetName="AzureStorage")]
+    [string]$Location="westus",
+
+    [Parameter(Mandatory=$false,ParameterSetName="AzureStorage")]
+    [string]$SubscriptionId
+)
+
 Import-Module .\AzureRmStorageTable.psd1 -Force
 
-#$choices = [System.Management.Automation.Host.ChoiceDescription[]] @("&Y","&N")
-#$useEmulator = $Host.UI.PromptForChoice("Use local Azure Storage Emulator?", "", $choices, 0)
-#$useEmulator = $useEmulator -eq 0
-
-$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
+#$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
+$uniqueString = [string]::Format("{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
+$resourceGroup = "$uniqueString-rg"
 
 $GetAzTableTableCmdtTableName = "TestTable"
 
 Describe "AzureRmStorageTable" {
     BeforeAll {
-        $context = Az.Storage\New-AzStorageContext -Local
+        if ($PSCmdlet.ParameterSetName -ne "AzureStorage")
+        {
+            # Storage Emulator
+            $context = Az.Storage\New-AzStorageContext -Local
+        }
+        else
+        {
+            # Storage Account
+            Select-AzSubscription -SubscriptionId $SubscriptionId
+            New-AzResourceGroup -Name $resourceGroup -Location $Location
+            New-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Location $Location -SkuName Standard_LRS -Kind StorageV2
+            $context = (Get-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup).Context
+        }
 
-        # Storage Table
+        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+
         $tables = [System.Collections.ArrayList]@()
-        $tableNames = @("$($uniqueString)insert", "$($uniqueString)delete")
-        foreach ($tableName in $tableNames) {
+        $tableNames = @("table$($uniqueString)insert", "table$($uniqueString)delete")
+        foreach ($tableName in $tableNames)
+        {
             Write-Host -for DarkGreen "   Creating Storage Table $($tableName)"
-            $Table = Get-AzTableTable -table $tableName -UseStorageEmulator
+            $Table = Invoke-Expression("Get-AzTableTable -table `$tableName $GetTableCommand")
+
+            Write-Host -for Green "      Created Table $($table | out-string)"
             $tables.Add($table)
         }
     }
 
     Context "Get-AzTableTable" {
 
+        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+
         It "Can create a new table" {
-            Get-AzTableTable -table $GetAzTableTableCmdtTableName -UseStorageEmulator
+            Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
         }
 
         It "Can open an existing table" {
-            Get-AzTableTable -table $GetAzTableTableCmdtTableName -UseStorageEmulator
+            Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
         }
     }
 
     Context "Add-AzTableRow" {
         BeforeAll {
-            $tableInsert = $tables | Where-Object -Property Name -EQ "$($uniqueString)insert"
+            $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
         }
 
         It "Can add entity" {
@@ -108,7 +134,7 @@ Describe "AzureRmStorageTable" {
 
     Context "Get-AzTableRow" {
         BeforeAll {
-            $tableInsert = $tables | Where-Object -Property Name -EQ "$($uniqueString)insert"
+            $tableInsert = $tables | Where-Object -Property Name -EQ "table$($uniqueString)insert"
             $partitionKey = [guid]::NewGuid().tostring()
             $rowKey = [guid]::NewGuid().tostring()
 
@@ -165,7 +191,7 @@ Describe "AzureRmStorageTable" {
 
     Context "Remove-AzTableRow" {
         BeforeAll {
-            $tableDelete = $tables | Where-Object -Property Name -EQ "$($uniqueString)delete"
+            $tableDelete = $tables | Where-Object -Property Name -eq "table$($uniqueString)delete"
         }
 
         It "Can delete entity" {
@@ -236,7 +262,7 @@ Describe "AzureRmStorageTable" {
     
     Context "Update-AzTableRow" {
         BeforeAll {
-            $tableInsert = $tables | Where-Object -Property Name -EQ "$($uniqueString)insert"
+            $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
         }
 
         It "Can it update an entity" {
@@ -268,6 +294,12 @@ Describe "AzureRmStorageTable" {
         foreach ($tableName in $tableNames)
         {
             Remove-AzStorageTable -Context $context -Name $tableName -Force
+        }
+
+        if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
+        {
+            Remove-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Force
+            Remove-AzResourceGroup -Name $resourceGroup -Force
         }
 
         Write-Host -for DarkGreen "Done"

@@ -14,15 +14,6 @@
 
 #Requires -modules Az.Storage, Az.Resources
 
-# Loading DLLS
-#$path = $PSScriptRoot
-#[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Core.dll'))
-#[System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.OData.Edm.dll'))
-# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Spatial.dll'))
-# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Newtonsoft.Json.dll'))
-# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.DocumentDB.Core.dll'))
-# [System.Reflection.Assembly]::LoadFrom((join-path $path 'Microsoft.Azure.Cosmos.Table.dll'))
-
 # Deprecated Message
 $DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed in the next release, please use Get-AzTableRow instead."
 
