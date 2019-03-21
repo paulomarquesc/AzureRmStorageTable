@@ -18,7 +18,7 @@ steps:
       write-host "Location: $Location"
       write-host "Subscription: $SubscriptionId"
       $outputFile = ".\TEST-RESULTS.xml"
-      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
+      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
     azurePowerShellVersion: LatestVersion
 
 - task: PublishTestResults@2
