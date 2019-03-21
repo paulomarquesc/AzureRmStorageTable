@@ -6,6 +6,7 @@ steps:
 - task: AzurePowerShell@1
   displayName: "Run pester"
   inputs:
+    ConnectedServiceNameARM: 
     ScriptType: InlineScript
     Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
@@ -15,8 +16,8 @@ steps:
       $SubscriptionId = (Get-AzContext).Subscription.id
        #$outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
-    displayName: 
-    
+      azurePowerShellVersion: LatestVersion
+
 - task: PublishTestResults@2
   displayName: Publish Test Results
   inputs:
