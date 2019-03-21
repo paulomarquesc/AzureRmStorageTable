@@ -3,22 +3,25 @@ pool:
 
 
 steps:
-  - powershell: |
+- task: AzurePowerShell@1
+  displayName: "Run pester"
+  inputs:
+    ScriptType: InlineScript
+    Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
       Import-Module Pester
-      #$Location = "$(Parameters.Location)"
-      #$SubscriptionId = (Get-AzContext).Subscription.id
-      
-      #$outputFile = ".\TEST-RESULTS.xml"
+      $Location = "$(Parameters.Location)"
+      $SubscriptionId = (Get-AzContext).Subscription.id
+       #$outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
-    displayName: "Run pester"
+    displayName: 
     
-  - task: PublishTestResults@2
-    displayName: Publish Test Results
-    inputs:
-      testRunTitle: Test Results for Pester
-      buildPlatform: Windows
-      testRunner: NUnit
-      testResultsFiles: ./TEST-RESULTS.xml
-      failTaskOnFailedTests: true
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testRunTitle: Test Results for Pester
+    buildPlatform: Windows
+    testRunner: NUnit
+    testResultsFiles: ./TEST-RESULTS.xml
+    failTaskOnFailedTests: true
