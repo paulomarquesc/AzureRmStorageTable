@@ -1,12 +1,12 @@
 pool:
   vmImage: vs2017-win2016
-
+  demands: azureps
 
 steps:
 - task: AzurePowerShell@1
   displayName: "Run pester"
   inputs:
-    ConnectedServiceNameARM: 
+    azureSubscription: $(Parameters.AzureSubscription)
     ScriptType: InlineScript
     Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
