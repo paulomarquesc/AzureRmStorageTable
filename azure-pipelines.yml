@@ -6,9 +6,9 @@ steps:
 - task: AzurePowerShell@1
   displayName: "Run pester"
   inputs:
-    azureSubscription: $(Parameters.AzureSubscription)
+    azureSubscription: pmarques-azure-connection
     ScriptType: InlineScript
-    ConnectedServiceNameSelector: ConnectedServiceNameARM
+   ConnectedServiceNameARM: : pmarques-azure-connection
     Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
