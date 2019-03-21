@@ -8,6 +8,7 @@ steps:
   inputs:
     azureSubscription: $(Parameters.AzureSubscription)
     ScriptType: InlineScript
+    ConnectedServiceNameSelector: ConnectedServiceNameARM
     Inline: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
