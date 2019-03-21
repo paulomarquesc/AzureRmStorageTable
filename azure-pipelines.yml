@@ -11,11 +11,13 @@ steps:
     ConnectedServiceNameSelector: ConnectedServiceNameARM
     ConnectedServiceNameARM: pmarques-azure-connection
     Inline: |
-      Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+      #Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
       Install-Module -Name Pester -Force -Verbose -Scope CurrentUser
       Import-Module Pester
       $Location = "$(Parameters.Location)"
-      $SubscriptionId = (Get-AzContext).Subscription.id
+      $SubscriptionId = (Get-AzureRmContext).Subscription.id
+      write-host "Location: $Location"
+      write-host "Subscription: $SubscriptionId"
        #$outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}  
     azurePowerShellVersion: LatestVersion
