@@ -14,9 +14,9 @@ steps:
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).SubscriptionId
-      $StorageAccountRg = $(Parameters.StorageAccountRG)
-      $StorageAccountName = $(Parameters.StorageAccountName)
-      $AzModuleContainer = $(Parameters.AzModuleContainer)
+      $StorageAccountRg = "$(Parameters.StorageAccountRG)"
+      $StorageAccountName = "$(Parameters.StorageAccountName)"
+      $AzModuleContainer = "$(Parameters.AzModuleContainer)"
 
       Install-Module -Name Pester -Force -Scope CurrentUser
       Import-Module Pester
