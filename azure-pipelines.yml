@@ -1,6 +1,6 @@
 pool:
-  vmImage: win1803
-  #demands: azureps
+  vmImage: ubuntu-16.04
+  demands: azureps
 
 steps:
 - task: AzurePowerShell@1
@@ -19,7 +19,6 @@ steps:
       $AzModuleContainer = $(Parameters.AzModuleContainer)
 
       Install-Module -Name Pester -Force -Scope CurrentUser
-      Install-Module -Name AzureRm -Force -Scope CurrentUser
       Import-Module Pester
 
       # Downloading AzCopy 10 Preview
