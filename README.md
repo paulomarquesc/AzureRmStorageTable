@@ -2,22 +2,22 @@
 Repository for a sample module to manipulate Azure Storage Table rows/entities.
 
 For more information, please visit the following blog post:
-https://blogs.technet.microsoft.com/paulomarques/2017/01/17/working-with-azure-storage-tables-from-powershell/
+https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/
 
-This module supports *Azure Storage Tables*. Cosmos DB support was removed.
+This module supports only *Azure Storage Tables*.
 
 For PowerShell Core version of this module, please refer to a great community contribution by JakeDenyer below:
 https://github.com/jakedenyer/AzStorageTable
 
 
 ## Quick Setup
-1. In a Windows 10/2016 execute the following cmdlets in order to install required modules
+1. In a Windows Server 2016/Windows 10 execute the following cmdlets in order to install required modules
     ```powershell
     Install-Module Az.Resources -AllowClobber -Force
     Install-Module Az.Storage -AllowClobber -Force
     ```
     
-1. Install AzureRmStorageTable
+2. Install AzureRmStorageTable
     ```powershell
     Install-Module AzureRmStorageTable
     ```
