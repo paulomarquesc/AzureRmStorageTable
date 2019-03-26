@@ -19,7 +19,7 @@ Description = 'Sample functions to add/retrieve/update entities on Azure Storage
 HelpInfoUri = 'https://blogs.technet.microsoft.com/paulomarques/2017/01/17/working-with-azure-storage-tables-from-powershell/'
 
 # Version number of this module
-ModuleVersion = '1.0.0.23'
+ModuleVersion = '2.0.0'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'
@@ -33,17 +33,20 @@ CLRVersion = '2.0'
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
 NestedModules = @('AzureRmStorageTableCoreHelper.psm1')
 
-FunctionsToExport = @(  'Add-StorageTableRow',
-                        'Get-AzureStorageTableRowAll',
-                        'Get-AzureStorageTableRowByPartitionKey',
-                        'Get-AzureStorageTableRowByPartitionKeyRowKey',
-                        'Get-AzureStorageTableRowByColumnName',
-                        'Get-AzureStorageTableRowByCustomFilter',
-                        'Update-AzureStorageTableRow',
-                        'Remove-AzureStorageTableRow',
-                        'Get-AzureStorageTableTable'
+FunctionsToExport = @(  'Add-AzTableRow',
+                        'Get-AzTableRow',
+                        'Get-AzTableRowAll',
+                        'Get-AzTableRowByPartitionKeyRowKey',
+                        'Get-AzTableRowByPartitionKey',
+                        'Get-AzTableRowByColumnName',
+                        'Get-AzTableRowByCustomFilter',
+                        'Update-AzTableRow',
+                        'Remove-AzTableRow',
+                        'Get-AzTableTable'
                         )
 
 VariablesToExport = ''
+
+AliasesToExport = '*'
 
 }

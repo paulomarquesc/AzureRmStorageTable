@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 2.0.0
+* This module now depends on Az.Storage, Az.Authentication and Az.Resources Powershell modules, this version of the module will not work anymore with AzureRM. 
+* A major change happened on SDK side and assembly Microsoft.WindowsAzure.Storage is now replaced by Microsoft.Azure.Cosmos assembly.
+* Moved from sync to async methods to perform query operations. Kudos to [jakedenyer](https://github.com/jakedenyer) for his contributions in this space.
+* Noun "AzureStorageTable" got replaced by "AzTable" but aliases are being provided for compatibility. Notice that for automatic module load, you need to use the new noun, for the old noun, you must import the module before using a cmdlet.
+* All Get cmdlets got deprecated and Get-AzTableRow must be used moving forward, they are still available but they are calling Get-AzTableRow behind the scenes and will be removed in a future release.
+
 ## Version 1.0.0.23
 * Added parameter UpdateExisting to Add-StorageTableRow so if a row already exists you can update its content in a single operation 
 

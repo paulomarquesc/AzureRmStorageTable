@@ -1,0 +1,65 @@
+pool:
+  vmImage: vs2017-win2016
+  demands: azureps
+
+steps:
+- task: AzurePowerShell@1
+  displayName: "Run pester"
+  inputs:
+    azureSubscription: pmarques-azure-connection
+    ScriptType: InlineScript
+    ConnectedServiceNameSelector: ConnectedServiceNameARM
+    ConnectedServiceNameARM: pmarques-azure-connection
+    Inline: |
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      $Location = "$(Parameters.Location)"
+      $SubscriptionId = (Get-AzureRmContext).SubscriptionId
+      $StorageAccountRg = "$(Parameters.StorageAccountRG)"
+      $StorageAccountName = "$(Parameters.StorageAccountName)"
+      $AzModuleContainer = "$(Parameters.AzModuleContainer)"
+
+      Install-Module -Name Pester -Force -Scope CurrentUser
+      Import-Module Pester
+
+      # Downloading AzCopy 10 Preview
+      if (-not (Test-Path "./azcopy_windows.zip"))
+      {
+        $WebClient = new-object System.Net.WebClient
+        $WebClient.DownloadFile("https://aka.ms/downloadazcopy-v10-windows","./azcopy_windows.zip")
+        Expand-Archive .\azcopy_windows.zip -DestinationPath  "."
+      }
+
+      $AzCopy = (Get-ChildItem ".\" -Filter "azcopy.exe" -Recurse | Select-Object).FullName
+
+      # Downloading Az module
+      $AzPsModuleFolder = "./2019_03_26_PowerShell"
+      $AzPsModuleName = "azpowershell.zip"
+      if (-not (Test-Path $AzPsModuleFolder))
+      {
+        New-Item -Path $AzPsModuleFolder -ItemType directory -Force 
+        $StorageAccount = Get-AzureRmStorageAccount -ResourceGroup $StorageAccountRg -Name $StorageAccountName 
+        $SasToken = New-AzureStorageContainerSASToken -Container $AzModuleContainer -Context $StorageAccount.Context -Permission r -ExpiryTime (Get-Date).AddHours(4)
+      }
+
+      & "$AzCopy" cp "https://$StorageAccountName.blob.core.windows.net/$AzModuleContainer/$AzPsModuleName$SasToken" $AzPsModuleFolder
+
+      Expand-Archive (Join-Path $AzPsModuleFolder $AzPsModuleName) -DestinationPath $AzPsModuleFolder
+
+      Set-Location "$AzPsModuleFolder"
+      ./RegisterRepository.ps1
+      Install-Module -Name Az.Storage -Repository ($AzPsModuleFolder.Replace('./','')) –AllowClobber –Force -Scope CurrentUser
+      Install-Module -Name Az.Resources -Repository ($AzPsModuleFolder.Replace('./','')) –AllowClobber –Force -Scope CurrentUser
+
+      Set-Location "$(Build.Repository.LocalPath)"
+      $outputFile = ".\TEST-RESULTS.xml"
+      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
+    azurePowerShellVersion: LatestVersion
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testRunTitle: Test Results for Pester
+    buildPlatform: Windows
+    testRunner: NUnit
+    testResultsFiles: ./TEST-RESULTS.xml
+    failTaskOnFailedTests: true
