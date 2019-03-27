@@ -9,6 +9,14 @@ This module supports only *Azure Storage Tables*.
 For PowerShell Core version of this module, please refer to a great community contribution by JakeDenyer below:
 https://github.com/jakedenyer/AzStorageTable
 
+## Requirements
+
+Minimum requirements are (these are covered if you install the full Az module version 1.6 or greater):
+
+* Az.Storage - 1.1.0 or greater
+* Az.Resources - 1.2.0 or greater
+
+> Note: The previous PowerShell module (AzureRM) is not supported on this newer version.
 
 ## Quick Setup
 1. In a Windows Server 2016/Windows 10 execute the following cmdlets in order to install required modules
