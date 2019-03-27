@@ -6,8 +6,7 @@ https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershel
 
 This module supports only *Azure Storage Tables*.
 
-For PowerShell Core version of this module, please refer to a great community contribution by JakeDenyer below:
-https://github.com/jakedenyer/AzStorageTable
+This module now works with PS 5.1, and PS 6 (core) on Windows and Linux.
 
 ## Requirements
 
