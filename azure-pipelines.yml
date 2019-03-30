@@ -7,7 +7,7 @@ steps:
   displayName: "Run pester"
   inputs:
     scriptType: inlineScript
-    script: |
+    inlineScript: |
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).SubscriptionId
