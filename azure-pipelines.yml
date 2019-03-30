@@ -8,7 +8,7 @@ steps:
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
       Uninstall-AzureRm -Force
       $Location = "$(Parameters.Location)"
-      $SubscriptionId = (Get-AzureRmContext).SubscriptionId
+      #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
       $StorageAccountRg = "$(Parameters.StorageAccountRG)"
       $StorageAccountName = "$(Parameters.StorageAccountName)"
       $AzModuleContainer = "$(Parameters.AzModuleContainer)"
