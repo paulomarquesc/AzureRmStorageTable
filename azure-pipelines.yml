@@ -8,7 +8,9 @@ steps:
   inputs:
     scriptType: inlineScript
     inlineScript: |
+
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      Uninstall-AzureRm -Force
       $Location = "$(Parameters.Location)"
       $SubscriptionId = (Get-AzureRmContext).SubscriptionId
       $StorageAccountRg = "$(Parameters.StorageAccountRG)"
