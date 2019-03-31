@@ -7,7 +7,7 @@ steps:
     KeyVaultName: pmckeyvault03
     SecretsFilter: 'SpPassword'
 
-- task: PowerShell@
+- task: PowerShell@1
   displayName: "Run pester"
   inputs:
     scriptType: inlineScript
