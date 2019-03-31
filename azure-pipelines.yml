@@ -36,7 +36,7 @@ steps:
       $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $Password)
       Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
-      $SubscriptionId = (Get-AzContext).SubscriptionId
+      $SubscriptionId = (Get-AzContext).Subscription.id
       Write-Verbose -Verbose "Subscription-> $SubscriptionId"
 
       Set-Location "$(Build.Repository.LocalPath)"
