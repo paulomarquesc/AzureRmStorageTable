@@ -4,14 +4,8 @@ steps:
   inputs:
     scriptType: inlineScript
     inlineScript: |
-
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Uninstall-AzureRm -Force
       $Location = "$(Parameters.Location)"
-      #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
-      $StorageAccountRg = "$(Parameters.StorageAccountRG)"
-      $StorageAccountName = "$(Parameters.StorageAccountName)"
-      $AzModuleContainer = "$(Parameters.AzModuleContainer)"
 
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Storage -MinimumVersion 1.1.0 -AllowClobber -Force -Scope CurrentUser
@@ -21,6 +15,8 @@ steps:
       Import-Module Az.Accounts
       Import-Module Az.Storage
       Import-Module Az.Resources
+
+      #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
 
       Set-Location "$(Build.Repository.LocalPath)"
       $outputFile = ".\TEST-RESULTS.xml"
