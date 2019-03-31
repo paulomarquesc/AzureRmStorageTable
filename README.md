@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/paulomarquesc/AzureRmStorage/_apis/build/status/paulomarquesc.AzureRmStorageTable?branchName=staging)](https://dev.azure.com/paulomarquesc/AzureRmStorage/_build/latest?definitionId=4&branchName=staging)
+
 # AzureRmStorageTable
 Repository for a sample module to manipulate Azure Storage Table rows/entities.
 
