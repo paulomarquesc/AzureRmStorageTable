@@ -18,9 +18,7 @@ steps:
       $Location = "$(Parameters.Location)"
       $SpName = "$(Parameters.SpName)"
       $TenantId = "$(Parameters.TenantId)"
-      $Password = "$(SpPassword)"
-
-      Write-Verbose -Verbose $($Password | Out-String)
+      $PasswordString = "$(SpPassword)"
 
       Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
@@ -34,6 +32,7 @@ steps:
       Import-Module Az.Resources
 
       Write-Verbose -Verbose "Authenticating"
+      $Password = ConvertTo-SecureString -AsPlainText -Force $PasswordString
       $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $Password)
       Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
