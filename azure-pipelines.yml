@@ -20,6 +20,8 @@ steps:
       $TenantId = "$(Parameters.TenantId)"
       [PSCredential]$Password = "$(SpPassword)"
 
+      Write-Verbose -Verbose $($Password | Out-String)
+
       Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Storage -MinimumVersion 1.1.0 -AllowClobber -Force -Scope CurrentUser
