@@ -3,11 +3,11 @@ steps:
 - task: AzureKeyVault@1
   displayName: 'Azure Key Vault: AdminPassword'
   inputs:
-    azureSubscription: 'AG_CAT_TestingSub1_TEST_pmarques ( 66bc9830-19b6-4987-94d2-0e487be7aa47 )'
+    azureSubscription: azure-connection
     KeyVaultName: pmckeyvault03
     SecretsFilter: 'SpPassword'
 
-- task: PowerShell@1
+- task: PowerShell@
   displayName: "Run pester"
   inputs:
     scriptType: inlineScript
