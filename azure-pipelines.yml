@@ -18,7 +18,7 @@ steps:
       $Location = "$(Parameters.Location)"
       $SpName = "$(Parameters.SpName)"
       $TenantId = "$(Parameters.TenantId)"
-      [PSCredential]$Password = "$(SpPassword)"
+      $Password = "$(SpPassword)"
 
       Write-Verbose -Verbose $($Password | Out-String)
 
