@@ -37,7 +37,7 @@ steps:
       Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
       $SubscriptionId = (Get-AzContext).SubscriptionId
-      Write-Verbose -Verbose "Subscription-> SubscriptionId"
+      Write-Verbose -Verbose "Subscription-> $SubscriptionId"
 
       Set-Location "$(Build.Repository.LocalPath)"
       $outputFile = ".\TEST-RESULTS.xml"
