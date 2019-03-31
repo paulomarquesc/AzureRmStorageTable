@@ -18,7 +18,7 @@ steps:
       $Location = "$(Parameters.Location)"
       $SpName = "$(Parameters.SpName)"
       $TenantId = "$(Parameters.TenantId)"
-      $Password = "$(SpPassword)"
+      [PSCredential]$Password = "$(SpPassword)"
 
       Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
