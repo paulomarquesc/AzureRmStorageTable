@@ -1,11 +1,13 @@
 steps:
+
 - task: AzureKeyVault@1
   displayName: 'Azure Key Vault: AdminPassword'
   inputs:
     azureSubscription: 'AG_CAT_TestingSub1_TEST_pmarques ( 66bc9830-19b6-4987-94d2-0e487be7aa47 )'
     KeyVaultName: pmckeyvault03
     SecretsFilter: 'SpPassword'
-- task: PowerShell@2
+
+- task: PowerShell@1
   displayName: "Run pester"
   inputs:
     scriptType: inlineScript
@@ -38,7 +40,8 @@ steps:
       Set-Location "$(Build.Repository.LocalPath)"
       $outputFile = ".\TEST-RESULTS.xml"
       #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
-- task: PublishTestResults@3
+
+- task: PublishTestResults@1
   displayName: Publish Test Results
   inputs:
     testRunTitle: Test Results for Pester
