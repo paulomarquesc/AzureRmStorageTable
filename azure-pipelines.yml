@@ -1,20 +1,37 @@
 steps:
+- task: AzureKeyVault@1
+  displayName: 'Azure Key Vault: AdminPassword'
+  inputs:
+    azureSubscription: 'Pmarques Azure (66bc9830-19b6-4987-94d2-0e487be7aa47)'
+    KeyVaultName: pmckeyvault03
+    SecretsFilter: 'SpPassword'
 - task: PowerShell@1
   displayName: "Run pester"
   inputs:
     scriptType: inlineScript
     inlineScript: |
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      $Location = "$(Parameters.Location)"
 
+      Write-Verbose -Verbose "Getting pipeline variables"
+      $Location = "$(Parameters.Location)"
+      $SpName = "$(Parameters.SpName)"
+      $TenantId = "$(Parameters.TenantId)"
+      $Passowrd = "$(SpPassword)"
+
+      Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Storage -MinimumVersion 1.1.0 -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Resources -MinimumVersion 1.2.1 -AllowClobber -Force -Scope CurrentUser
 
+      Write-Verbose -Verbose "Importing modules"
       Import-Module Pester
       Import-Module Az.Accounts
       Import-Module Az.Storage
       Import-Module Az.Resources
+
+      Write-Verbose -Verbose "Authenticating"
+      $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $SpPassword)
+      Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
       #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
 
