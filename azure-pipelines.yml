@@ -36,11 +36,11 @@ steps:
       $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $Password)
       Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
-      #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
+      $SubscriptionId = (Get-AzContext).SubscriptionId
 
       Set-Location "$(Build.Repository.LocalPath)"
       $outputFile = ".\TEST-RESULTS.xml"
-      #Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
+      Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
 
 - task: PublishTestResults@1
   displayName: Publish Test Results
