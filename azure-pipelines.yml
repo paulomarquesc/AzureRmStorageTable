@@ -18,7 +18,7 @@ steps:
       $Location = "$(Parameters.Location)"
       $SpName = "$(Parameters.SpName)"
       $TenantId = "$(Parameters.TenantId)"
-      $Passowrd = "$(SpPassword)"
+      $Password = "$(SpPassword)"
 
       Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
@@ -32,7 +32,7 @@ steps:
       Import-Module Az.Resources
 
       Write-Verbose -Verbose "Authenticating"
-      $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $SpPassword)
+      $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $Password)
       Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
 
       #$SubscriptionId = (Get-AzureRmContext).SubscriptionId
