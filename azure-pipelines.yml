@@ -53,10 +53,10 @@ steps:
 
 - task: PublishTestResults@1
   displayName: Publish Test Results
-  continueOnError: true
   inputs:
     testRunTitle: Test Results for Pester
     buildPlatform: Windows
     testRunner: NUnit
     testResultsFiles: ./TEST-RESULTS.xml
     failTaskOnFailedTests: true
+  condition: succeededOrFailed()
