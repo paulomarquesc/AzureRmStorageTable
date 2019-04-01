@@ -51,11 +51,13 @@ Describe "AzureRmStorageTable" {
         $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
 
         It "Can create a new table" {
-            Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table | Should not be $null
         }
 
         It "Can open an existing table" {
-            Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table | Should not be $null
         }
     }
 
@@ -68,13 +70,15 @@ Describe "AzureRmStorageTable" {
             $entity = $null
             $expectedPK = [guid]::NewGuid().Guid
             $expectedRK = [guid]::NewGuid().Guid
+
+            $expectedRK1 = 123
          
             Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
             $entity = Get-AzTableRow -table $tableInsert
 
             $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
+            $entity.RowKey | Should be $expectedRK1
         }
 
         It "Can add entity with empty partition key" {
