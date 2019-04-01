@@ -70,14 +70,13 @@ Describe "AzureRmStorageTable" {
             $entity = $null
             $expectedPK = [guid]::NewGuid().Guid
             $expectedRK = [guid]::NewGuid().Guid
-            $expectedRK1 = 123
          
             Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
             $entity = Get-AzTableRow -table $tableInsert
 
             $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK1
+            $entity.RowKey | Should be $expectedRK
         }
 
         It "Can add entity with empty partition key" {

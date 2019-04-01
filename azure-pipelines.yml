@@ -44,6 +44,9 @@ steps:
       $outputFile = ".\TEST-RESULTS.xml"
       Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
 
+      # Clean up .Azure folder
+      Remove-Item C:\windows\ServiceProfiles\NetworkService\.Azure -Recurse -Force 
+
       # Checking results to fail build if necessary
       [xml]$result = Get-Content .\TEST-RESULTS.xml
       if ($result.'test-results'.'test-suite'.result -ieq "failure")
