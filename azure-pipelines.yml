@@ -44,6 +44,11 @@ steps:
       $outputFile = ".\TEST-RESULTS.xml"
       Invoke-Pester -OutputFile $outputFile -OutputFormat NUnitXml @{Path="./Tests";Parameters=@{SubscriptionId=$SubscriptionId;Location=$Location}}
 
+      if ($result.'test-results'.'test-suite'.result -ieq "failure")
+      {
+          throw "Pester has finished with failed tests"
+      }
+
 - task: PublishTestResults@1
   displayName: Publish Test Results
   continueOnError: true
