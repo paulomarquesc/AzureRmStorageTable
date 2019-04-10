@@ -6,10 +6,6 @@
   	AzureRmStorageTableCoreHelper.psm1 - PowerShell Module that contains all functions related to manipulating Azure Storage Table rows/entities.
 .NOTES
 	This module depends on Az.Accounts, Az.Resources and Az.Storage PowerShell modules	
-
-	If running this module from Azure Automation, please make sure you check out this blog post for more information:
-	https://blogs.technet.microsoft.com/paulomarques/2017/01/17/working-with-azure-storage-tables-from-powershell/
-	
 #>
 
 #Requires -modules Az.Storage, Az.Resources
@@ -50,13 +46,15 @@ function ExecuteQueryAsync
 
 	if ($TableQuery -ne $null)
 	{
+		$AllRows = @()
 		do
 		{
 			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
-			$token = $Results.ContinuationToken
-		} while ($token -ne $null)
+			$token = $Results.Result.ContinuationToken
+			$AllRows += $Results.Result.Results
+		} while ($token.NextRowKey -ne $null)
 	
-		return $Results
+		return $AllRows
 	}
 }
 
@@ -592,9 +590,14 @@ function Get-AzTableRow
 	{
 		$Result = ExecuteQueryAsync -TableQuery $TableQuery
 
-		if (-not [string]::IsNullOrEmpty($Result.Result.Results))
+		# if (-not [string]::IsNullOrEmpty($Result.Result.Results))
+		# {
+		# 	return (GetPSObjectFromEntity($Result.Result.Results))
+		# }
+
+		if (-not [string]::IsNullOrEmpty($Result))
 		{
-			return (GetPSObjectFromEntity($Result.Result.Results))
+			return (GetPSObjectFromEntity($Result))
 		}
 	}
 }
@@ -731,7 +734,8 @@ function Remove-AzTableRow
 		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
 		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
 		$TableQuery.FilterString = $Filter
-		$itemToDelete = (ExecuteQueryAsync -TableQuery $TableQuery).Result
+		#$itemToDelete = (ExecuteQueryAsync -TableQuery $TableQuery).Result
+		$itemToDelete = ExecuteQueryAsync -TableQuery $TableQuery
 
 		# Converting DynamicTableEntity to TableEntity for deletion
 		$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"

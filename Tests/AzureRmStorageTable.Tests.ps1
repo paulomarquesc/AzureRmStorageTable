@@ -8,7 +8,7 @@ param
     [string]$SubscriptionId
 )
 
-Import-Module .\AzureRmStorageTable.psd1 -Force
+Import-Module .\AzTable.psd1 -Force
 
 #$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
 $uniqueString = [string]::Format("{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
