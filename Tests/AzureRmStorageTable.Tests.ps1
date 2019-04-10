@@ -11,7 +11,7 @@ param
 Import-Module .\AzTable.psd1 -Force
 
 #$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
-$uniqueString = [string]::Format("{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
+$uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
 $resourceGroup = "$uniqueString-rg"
 
 $GetAzTableTableCmdtTableName = "TestTable"
