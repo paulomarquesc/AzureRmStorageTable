@@ -1,7 +1,14 @@
-[![Build Status](https://dev.azure.com/paulomarquesc/AzureRmStorage/_apis/build/status/paulomarquesc.AzureRmStorageTable?branchName=staging)](https://dev.azure.com/paulomarquesc/AzureRmStorage/_build/latest?definitionId=4&branchName=staging)
 
 # AzureRmStorageTable
 Repository for a sample module to manipulate Azure Storage Table rows/entities.
+
+## Build Status per Branch
+
+### staging
+[![Build Status](https://dev.azure.com/paulomarquesc/AzureRmStorage/_apis/build/status/paulomarquesc.AzureRmStorageTable?branchName=staging)](https://dev.azure.com/paulomarquesc/AzureRmStorage/_build/latest?definitionId=4&branchName=staging)
+
+### master
+[![Build Status](https://dev.azure.com/paulomarquesc/AzureRmStorage/_apis/build/status/paulomarquesc.AzureRmStorageTable?branchName=staging)](https://dev.azure.com/paulomarquesc/AzureRmStorage/_build/latest?definitionId=4&branchName=master)
 
 For more information, please visit the following blog post:
 https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/
