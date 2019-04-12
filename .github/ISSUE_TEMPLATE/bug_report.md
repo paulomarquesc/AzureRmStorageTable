@@ -13,13 +13,13 @@ A clear and concise description of what the bug is.
 **Error Message**
 Add here the complete error message.
 
-**PowerShell Version **
+**PowerShell Version**
 Include here the full output of the following command line:
 ```powershell
 $PSVersionTable
 ```
 
-**Complete list of Azure related Powershell modules **
+**Complete list of Azure related Powershell modules**
 Paste here the complete output of `Get-Module *az* -ListAvailable`
 
 **Code Snippet**
