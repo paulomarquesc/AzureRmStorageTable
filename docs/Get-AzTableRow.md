@@ -250,7 +250,7 @@ Accept wildcard characters: False
 ```
 
 ### -Top
-Custom Filter string (byCustomFilter parameter set)
+How many rows to return. If not specified, all rows are returned. Rough equivalent of SQL SELECT TOP(N) FROM...
 
 ```yaml
 Type: Int32
