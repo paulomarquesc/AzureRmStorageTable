@@ -38,6 +38,11 @@ Get-AzTableRow [-Table <Object>] [-PartitionKey <String>] -RowKey <String> [<Com
 Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>]
 ```
 
+### topNbyPartitionKey
+```powershell
+Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>] -Top 1000
+```
+
 ### GetAll
 ```powershell
 Get-AzTableRow -Table <Object> [<CommonParameters>]
@@ -53,6 +58,9 @@ Used to return entities from a table with several options, this replaces all oth
 # Getting all rows
 Get-AzTableRow -Table $Table
 
+# Getting top 1000 rows from table
+Get-AzTableRow -Table $Table -Top 1000
+
 # Getting rows by partition key
 Get-AzTableRow -Table $table -partitionKey NewYorkSite
 
@@ -67,6 +75,7 @@ Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -oper
 
 # Getting rows using Custom Filter
 Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+
 ```
 
 ## PARAMETERS
@@ -236,6 +245,21 @@ Aliases:
 Required: True
 Position: Named
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Custom Filter string (byCustomFilter parameter set)
+
+```yaml
+Type: Int32
+Parameter Sets:
+Aliases:
+
+Required: False
+Position: Named
+Default value: [Int32]::MaxValue
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

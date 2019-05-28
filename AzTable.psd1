@@ -19,7 +19,7 @@ Description = 'Sample functions to add/retrieve/update entities on Azure Storage
 HelpInfoUri = 'https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/'
 
 # Version number of this module
-ModuleVersion = '2.0.2'
+ModuleVersion = '2.0.3'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'

@@ -40,12 +40,14 @@ function ExecuteQueryAsync
 	param
 	(
 		[Parameter(Mandatory=$true)]
-		$TableQuery
+		$TableQuery,
+		[Parameter(Mandatory=$false)]
+		[Int32]$Top = [Int32]::MaxValue
 	)
 	# Internal function
 	# Executes query in async mode
 
-	if ($TableQuery -ne $null)
+	if ($null -ne $TableQuery)
 	{
 		$AllRows = @()
 		do
@@ -53,7 +55,7 @@ function ExecuteQueryAsync
 			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
 			$token = $Results.Result.ContinuationToken
 			$AllRows += $Results.Result.Results
-		} while ($token.NextRowKey -ne $null)
+		} while (($null -ne $token.NextRowKey) -and ($AllRows.Count -lt $Top))
 	
 		return $AllRows
 	}
@@ -136,7 +138,7 @@ function Get-AzTableTable
 	{
 		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
 
-		if ($keys -ne $null)
+		if ($null -ne $keys)
 		{
 			if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
 			{
@@ -177,7 +179,7 @@ function Get-AzTableTable
 	}
 
 	# Checking if there a table got returned
-	if ($Table -eq $null)
+	if ($null -eq $Table)
 	{
 		throw $nullTableErrorMessage
 	}
@@ -487,6 +489,8 @@ function Get-AzTableRow
 		Supported comparison Operator. Valid values are "Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual" (byColummnString and byColummnGuid parameter sets)
 	.PARAMETER CustomFilter
 		Custom Filter string (byCustomFilter parameter set)
+	.PARAMETER Top
+		Limits amount of rows returned
 	.EXAMPLE
 		# Getting all rows
 		Get-AzTableRow -Table $Table
@@ -543,7 +547,11 @@ function Get-AzTableRow
 		[string]$Operator,
 		
 		[Parameter(Mandatory=$true, ParameterSetName="byCustomFilter")]
-		[string]$CustomFilter
+		[string]$CustomFilter,
+
+		[Parameter(Mandatory=$false)]
+		[Int32]$Top=[Int32]::MaxValue
+
 	)
 
 	$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
@@ -593,9 +601,9 @@ function Get-AzTableRow
 	}
 
 	# Getting results
-	if (($TableQuery.FilterString -ne $null) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
+	if (($null -ne $TableQuery.FilterString) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
 	{
-		$Result = ExecuteQueryAsync -TableQuery $TableQuery
+		$Result = ExecuteQueryAsync -TableQuery $TableQuery -Top $Top
 
 		# if (-not [string]::IsNullOrEmpty($Result.Result.Results))
 		# {
@@ -750,7 +758,7 @@ function Remove-AzTableRow
 		$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
 		$entityToDelete.RowKey = $itemToDelete.RowKey
 
-		if ($entityToDelete -ne $null)
+		if ($null -ne $entityToDelete)
 		{
    			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
 		}
