@@ -19,7 +19,7 @@ This document shows how to work with Azure Storage Tables from PowerShell, throu
 
 ## Updates<a name="updates"></a>
 
-**Update 08/06/2019**: Comments were removed from this blog post due to efforts to centralize discussions and/or issues into the module repo due to this module ownership changes. If you have any issues/comments, please file a comment/issue [here](https://github.com/paulomarquesc/AzureRmStorageTable/issues).
+**Update 08/06/2019**: Comments were removed from the original blog post due to efforts to centralize discussions and/or issues into the module repo due to this module ownership changes. If you have any issues/comments, please file a comment/issue [here](https://github.com/paulomarquesc/AzureRmStorageTable/issues).
 
 **Update 04/04/2019**: To avoid confusion if this module supports the new Az Powershell module, a new module name was released in the PowerShell Gallery under the name **AzTable**. The old name, **AzureRmStorageTable** will be kept in the gallery for compatibility purposes, both references the same code. This document will reference the new module name only.
 
