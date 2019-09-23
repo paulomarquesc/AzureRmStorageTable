@@ -1,7 +1,7 @@
 
 # AzureRmStorageTable
 Repository for a sample module to manipulate Azure Storage Table rows/entities.
-For a complete documentation with examples, troubleshooting guide, etc. , please refer to [this](./docs/working-with-azure-storage-tables-from-powershell.md) link.
+For a complete documentation with examples, troubleshooting guide, etc. , please refer to [this](./docs/README.md) link.
 
 ## Build Status per Branch
 
