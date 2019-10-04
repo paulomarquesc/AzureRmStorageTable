@@ -40,6 +40,8 @@ function ExecuteQueryAsync
 	param
 	(
 		[Parameter(Mandatory=$true)]
+		$Table,
+		[Parameter(Mandatory=$true)]
 		$TableQuery
 	)
 	# Internal function
@@ -596,7 +598,7 @@ function Get-AzTableRow
 	# Getting results
 	if (($TableQuery.FilterString -ne $null) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
 	{
-		$Result = ExecuteQueryAsync -TableQuery $TableQuery
+		$Result = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
 
 		# if (-not [string]::IsNullOrEmpty($Result.Result.Results))
 		# {
@@ -742,8 +744,8 @@ function Remove-AzTableRow
 		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
 		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
 		$TableQuery.FilterString = $Filter
-		#$itemToDelete = (ExecuteQueryAsync -TableQuery $TableQuery).Result
-		$itemToDelete = ExecuteQueryAsync -TableQuery $TableQuery
+		#$itemToDelete = (ExecuteQueryAsync -Table $Table -TableQuery $TableQuery).Result
+		$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
 
 		# Converting DynamicTableEntity to TableEntity for deletion
 		$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
