@@ -47,13 +47,14 @@ function ExecuteQueryAsync
 
 	if ($TableQuery -ne $null)
 	{
+        $token = $null
 		$AllRows = @()
 		do
 		{
 			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
 			$token = $Results.Result.ContinuationToken
 			$AllRows += $Results.Result.Results
-		} while ($token.NextRowKey -ne $null)
+		} while ($token)
 	
 		return $AllRows
 	}
