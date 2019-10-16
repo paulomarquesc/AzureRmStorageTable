@@ -231,8 +231,14 @@ function Add-AzTableRow
 	
 	# Creates the table entity with mandatory PartitionKey and RowKey arguments
 	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
-    
-    # Adding the additional columns to the table entity
+
+	# Adding the json string to the table entity
+	if($jsonString -and $propertyName) 
+    {
+        $entity.Properties.Add($propertyName, $jsonString)
+    }
+	
+	# Adding the additional columns to the table entity
 	foreach ($prop in $property.Keys)
 	{
 		if ($prop -ne "TableTimestamp")
