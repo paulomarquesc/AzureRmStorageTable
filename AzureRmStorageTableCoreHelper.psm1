@@ -237,14 +237,7 @@ function Add-AzTableRow
 	{
 		if ($prop -ne "TableTimestamp")
 		{
-			if($jsonString -and $propertyName) 
-			{
-				$entity.Properties.Add($propertyName, $jsonString)
-			}
-			else
-			{
-				$entity.Properties.Add($prop, $property.Item($prop))
-			}
+			$entity.Properties.Add($prop, $property.Item($prop))
 		}
 	}
 
