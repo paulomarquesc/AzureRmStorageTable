@@ -222,7 +222,11 @@ function Add-AzTableRow
 
 		[Parameter(Mandatory=$false)]
         [hashtable]$property,
-		[Switch]$UpdateExisting
+		[Switch]$UpdateExisting,
+
+		[Parameter(Mandatory=$false)]
+		[String]$propertyName,
+		[String]$jsonString
 	)
 	
 	# Creates the table entity with mandatory PartitionKey and RowKey arguments
@@ -233,7 +237,14 @@ function Add-AzTableRow
 	{
 		if ($prop -ne "TableTimestamp")
 		{
-			$entity.Properties.Add($prop, $property.Item($prop))
+			if($jsonString -and $propertyName) 
+			{
+				$entity.Properties.Add($propertyName, $jsonString)
+			}
+			else
+			{
+				$entity.Properties.Add($prop, $property.Item($prop))
+			}
 		}
 	}
 
