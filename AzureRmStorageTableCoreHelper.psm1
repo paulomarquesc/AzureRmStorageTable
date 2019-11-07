@@ -119,6 +119,9 @@ function Get-AzTableTable
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
 		[String]$storageAccountName,
+
+		[Parameter(ParameterSetName="AzTableStorageStorageAccount",Mandatory=$true,ValueFromPipeline=$true)]
+		[Microsoft.Azure.Commands.Management.Storage.Models.PSStorageAccount]$storageAccount,
 		
 		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
         [switch]$UseStorageEmulator
@@ -134,32 +137,38 @@ function Get-AzTableTable
 
 	if ($PSCmdlet.ParameterSetName -ne "AzStorageEmulator")
 	{
-		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
-
-		if ($keys -ne $null)
+		if($PSCmdlet.ParameterSetName -eq "AzTableStorageStorageAccount")
 		{
-			if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
+			$CloudStorageAccount = $storageAccount.Context.StorageAccount
+		}
+		else {
+			$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
+			
+			if (![string]::IsNullOrEmpty($keys))
 			{
-				$key = $keys.keys[0].value
-				$endpoint = "https://{0}.table.core.windows.net"
-				$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+				if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
+				{
+					$key = $keys.keys[0].value
+					$endpoint = "https://{0}.table.core.windows.net"
+					$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+				}
+				else
+				{
+					# Future Cosmos implementation
+					# $key = $keys.primaryMasterKey
+					# $endpoint = "https://{0}.table.Cosmos.azure.com"
+					# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
+				}
 			}
 			else
 			{
-				# Future Cosmos implementation
-				# $key = $keys.primaryMasterKey
-				# $endpoint = "https://{0}.table.Cosmos.azure.com"
-				# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
+				throw "An error ocurred while obtaining keys from $storageAccountName."    
 			}
+	
+			$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
+			[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$CloudStorageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
 		}
-		else
-		{
-			throw "An error ocurred while obtaining keys from $storageAccountName."    
-		}
-
-		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
-		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
+		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($CloudStorageAccount.TableEndpoint,$CloudStorageAccount.Credentials)
 		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
 
 		$Table.CreateIfNotExistsAsync() | Out-Null
@@ -169,8 +178,8 @@ function Get-AzTableTable
 		# https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator
 		$nullTableErrorMessage = "Table $TableName could not be retrieved from Azure Storage Emulator"
 		$connString ="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1"
-		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
+		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$CloudStorageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
+		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($CloudStorageAccount.TableEndpoint,$CloudStorageAccount.Credentials)
 		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
 
 		$Table.CreateIfNotExistsAsync() | Out-Null
