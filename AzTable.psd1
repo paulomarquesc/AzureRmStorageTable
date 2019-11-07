@@ -27,6 +27,10 @@ PowerShellVersion = '4.0'
 # Minimum version of the common language runtime (CLR) required by this module
 CLRVersion = '2.0'
 
+RequiredModules = @(
+    @{ModuleName="Az.Resources"; ModuleVersion="1.2.0"; GUID="48bb344d-4c24-441e-8ea0-589947784700"},
+    @{ModuleName="Az.Storage"; ModuleVersion="1.1.0"; GUID="dfa9e4ea-1407-446d-9111-79122977ab20"}
+)
 # Script module or binary module file associated with this manifest
 #ModuleToProcess = ''
 

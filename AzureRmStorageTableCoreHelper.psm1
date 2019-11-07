@@ -95,12 +95,14 @@ function Get-AzTableTable
 		Gets a Table object to be used in all other cmdlets.
 	.DESCRIPTION
 		Gets a Table object to be used in all other cmdlets.
-	.PARAMETER resourceGroup
+	.PARAMETER ResourceGroup
         Resource Group where the Azure Storage Account is located
-    .PARAMETER tableName
+    .PARAMETER TableName
         Name of the table to retrieve
-    .PARAMETER storageAccountName
-        Storage Account name where the table lives
+    .PARAMETER StorageAccountName
+		Storage Account name where the table lives
+	.PARAMETER StorageAccount
+        Storage account from "Get-AzStorageaccount"
 	.EXAMPLE
 		# Getting storage table object
 		$resourceGroup = "myResourceGroup"
@@ -112,16 +114,16 @@ function Get-AzTableTable
 	param
 	(
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
-		[string]$resourceGroup,
+		[string]$ResourceGroup,
 		
 		[Parameter(Mandatory=$true)]
         [String]$TableName,
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
-		[String]$storageAccountName,
+		[String]$StorageAccountName,
 
 		[Parameter(ParameterSetName="AzTableStorageStorageAccount",Mandatory=$true,ValueFromPipeline=$true)]
-		[Microsoft.Azure.Commands.Management.Storage.Models.PSStorageAccount]$storageAccount,
+		[Microsoft.Azure.Commands.Management.Storage.Models.PSStorageAccount]$StorageAccount,
 		
 		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
         [switch]$UseStorageEmulator
