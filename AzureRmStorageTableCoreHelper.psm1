@@ -44,7 +44,7 @@ function ExecuteQueryAsync
 		[Parameter(Mandatory=$true)]
 		$TableQuery
 	)
-	# Internal function
+	# Internal function 
 	# Executes query in async mode
 
 	if ($TableQuery -ne $null)
