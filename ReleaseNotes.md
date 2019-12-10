@@ -1,6 +1,9 @@
 # Release Notes
 
-## Version 2.0.0
+## Version 2.0.2
+* Implemented ContinuationToken logic while using ExecuteQuerySegmentedAsync to get more than 1000 rows.
+
+## Version 2.0.1
 * This module now depends on Az.Storage, Az.Authentication and Az.Resources Powershell modules, this version of the module will not work anymore with AzureRM. 
 * A major change happened on SDK side and assembly Microsoft.WindowsAzure.Storage is now replaced by Microsoft.Azure.Cosmos assembly.
 * Moved from sync to async methods to perform query operations. Kudos to [jakedenyer](https://github.com/jakedenyer) for his contributions in this space.

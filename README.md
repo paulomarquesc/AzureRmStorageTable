@@ -1,6 +1,7 @@
 
 # AzureRmStorageTable
 Repository for a sample module to manipulate Azure Storage Table rows/entities.
+For a complete documentation with examples, troubleshooting guide, etc. , please refer to [this](./docs/README.md) link.
 
 ## Build Status per Branch
 
@@ -9,9 +10,6 @@ Repository for a sample module to manipulate Azure Storage Table rows/entities.
 
 ### master
 [![Build Status](https://dev.azure.com/paulomarquesc/AzureRmStorage/_apis/build/status/paulomarquesc.AzureRmStorageTable?branchName=staging)](https://dev.azure.com/paulomarquesc/AzureRmStorage/_build/latest?definitionId=4&branchName=master)
-
-For more information, please visit the following blog post:
-https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/
 
 This module supports only *Azure Storage Tables*.
 
@@ -80,3 +78,4 @@ PS> Invoke-Pester @{Path="./Tests";Parameters=@{SubscriptionId='<your subscripti
 ```
 
 ![Invoke-Pester](AzureRmStorageTable-Pester.gif)
+

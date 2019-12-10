@@ -7,6 +7,7 @@
 .NOTES
 	This module depends on Az.Accounts, Az.Resources and Az.Storage PowerShell modules	
 #>
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 #Requires -modules Az.Storage, Az.Resources
 
@@ -123,6 +124,12 @@ function Get-AzTableTable
         [switch]$UseStorageEmulator
 	)
 	
+	# Validating name
+	if ($TableName.Contains("_") -or $TableName.Contains("-"))
+	{
+		throw "Invalid table name: $TableName"
+	} 
+
 	$nullTableErrorMessage = [string]::Empty
 
 	if ($PSCmdlet.ParameterSetName -ne "AzStorageEmulator")
