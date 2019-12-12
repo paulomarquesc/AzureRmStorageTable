@@ -115,16 +115,20 @@ function Get-AzTableTable
 	param
 	(
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
+		[Parameter(ParameterSetName="AzCosmosDb",Mandatory=$true)]
 		[string]$resourceGroup,
 		
 		[Parameter(Mandatory=$true)]
-        [String]$TableName,
+        	[String]$TableName,
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
 		[String]$storageAccountName,
 		
+		[Parameter(ParameterSetName="AzCosmosDb",Mandatory=$true)]
+		[String]$cosmosDbAccountName,
+		
 		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
-        [switch]$UseStorageEmulator
+        	[switch]$UseStorageEmulator
 	)
 	
 	# Validating name
@@ -134,35 +138,41 @@ function Get-AzTableTable
 	} 
 
 	$nullTableErrorMessage = [string]::Empty
+	
 
 	if ($PSCmdlet.ParameterSetName -ne "AzStorageEmulator")
 	{
-		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType "Microsoft.Storage/storageAccounts" -ApiVersion "2017-10-01" -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
-
-		if ($keys -ne $null)
+		if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
 		{
-			if ($PSCmdlet.ParameterSetName -eq "AzTableStorage" )
-			{
-				$key = $keys.keys[0].value
-				$endpoint = "https://{0}.table.core.windows.net"
-				$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
-			}
-			else
-			{
-				# Future Cosmos implementation
-				# $key = $keys.primaryMasterKey
-				# $endpoint = "https://{0}.table.Cosmos.azure.com"
-				# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
-			}
+			$ResourceType = "Microsoft.Storage/storageAccounts"
+			$endpoint = "https://{0}.table.core.windows.net"
+			$apiVersion = "2017-10-01"
+			$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+			$accountName = $storageAccountName
 		}
 		else
 		{
-			throw "An error ocurred while obtaining keys from $storageAccountName."    
+			$ResourceType = "Microsoft.DocumentDb/databaseAccounts"
+			$endpoint = "https://{0}.table.cosmos.azure.com"
+			$apiVersion = "2015-04-08"
+			$nullTableErrorMessage = "Table $TableName could not be retrieved from $cosmosDbAccountName on resource group $resourceGroupName"
+			$accountName = $cosmosDbAccountName
 		}
-
-		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
-		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
+		
+		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
+		
+		if ($keys -ne $null)
+		{		
+			$key = $keys.keys[0].value
+		}		
+		else
+		{
+			throw "An error ocurred while obtaining keys from $accountName."    
+		}
+		
+		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$accountName,$key)
+		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$account = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
+		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($account.TableEndpoint,$account.Credentials)
 		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
 
 		$Table.CreateIfNotExistsAsync() | Out-Null
