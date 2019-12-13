@@ -36,9 +36,17 @@ Describe "AzureRmStorageTable" {
             # CosmosDB Account
             $apiVersion = "2015-04-08"
             $accountProperties = @{
+                "databaseAccountOfferType"="Standard";
                 "capabilities"= @( @{ "name"="EnableTable" } ) 
-                }
-            New-AzResource -ResourceType $accountResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Location $Location -Name $uniqueString -PropertyObject $accountProperties
+            }
+
+            New-AzResource -ResourceType "Microsoft.DocumentDB/databaseAccounts" `
+                -ApiVersion $apiVersion `
+                -ResourceGroupName $resourceGroup `
+                -Location $Location `
+                -Name $uniqueString `
+                -PropertyObject $accountProperties `
+                -Force
         }
         
         # Preparing tables for inserts, deletes and updates
@@ -58,7 +66,7 @@ Describe "AzureRmStorageTable" {
             
             #CosmosDB Test
             Write-Host -for DarkGreen "   Creating CosmosDB Table $($tableName)"
-            $cosmosTable = Invoke-Expression("Get-AzTableTable -table `$tableName $GetCosmosDbTableCommand")
+            $cosmosTable = Invoke-Expression("Get-AzTableTable -table `"`cosmos$tableName`" $GetCosmosDbTableCommand")
             Write-Host -for Green "      Created CosmosDB Table $($table | out-string)"
             $tables.Add($cosmosTable)
         }
@@ -338,18 +346,20 @@ Describe "AzureRmStorageTable" {
     AfterAll { 
         Write-Host -for DarkGreen "Cleanup in process"
 
-        # Removing Get-AzTableTable test table
-        Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
-
-        foreach ($tableName in $tableNames)
-        {
-            Remove-AzStorageTable -Context $context -Name $tableName -Force
-        }
-
         if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
         {
-            Remove-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Force
             Remove-AzResourceGroup -Name $resourceGroup -Force
+        }
+        else
+        {
+            Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
+            foreach ($tableName in $tableNames)
+            {
+                if (-not $tableName.StartsWith("cosmos"))
+                {
+                    Remove-AzStorageTable -Context $context -Name $tableName -Force
+                }
+            }
         }
 
         Write-Host -for DarkGreen "Done"

@@ -119,7 +119,7 @@ function Get-AzTableTable
 		[string]$resourceGroup,
 		
 		[Parameter(Mandatory=$true)]
-        	[String]$TableName,
+        [String]$TableName,
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
 		[String]$storageAccountName,
@@ -128,7 +128,7 @@ function Get-AzTableTable
 		[String]$cosmosDbAccountName,
 		
 		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
-        	[switch]$UseStorageEmulator
+        [switch]$UseStorageEmulator
 	)
 	
 	# Validating name
@@ -147,7 +147,7 @@ function Get-AzTableTable
 			$ResourceType = "Microsoft.Storage/storageAccounts"
 			$endpoint = "https://{0}.table.core.windows.net"
 			$apiVersion = "2017-10-01"
-			$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
+			$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroup"
 			$accountName = $storageAccountName
 		}
 		else
@@ -155,11 +155,11 @@ function Get-AzTableTable
 			$ResourceType = "Microsoft.DocumentDb/databaseAccounts"
 			$endpoint = "https://{0}.table.cosmos.azure.com"
 			$apiVersion = "2015-04-08"
-			$nullTableErrorMessage = "Table $TableName could not be retrieved from $cosmosDbAccountName on resource group $resourceGroupName"
+			$nullTableErrorMessage = "Table $TableName could not be retrieved from $cosmosDbAccountName on resource group $resourceGroup"
 			$accountName = $cosmosDbAccountName
 		}
 		
-		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $storageAccountName -Force
+		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $accountName -Force
 		
 		if ($keys -ne $null)
 		{		
