@@ -161,9 +161,9 @@ function Get-AzTableTable
 		
 		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $accountName -Force
 		
-		if ($keys -ne $null)
+		if ($null -ne $keys)
 		{		
-			$key = $keys.keys[0].value
+			$key = @{$true = $keys.keys[0].value; $false = $keys.primaryMasterKey}[($PSCmdlet.ParameterSetName -eq "AzTableStorage")]
 		}		
 		else
 		{
