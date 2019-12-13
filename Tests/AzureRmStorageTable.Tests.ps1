@@ -35,40 +35,57 @@ Describe "AzureRmStorageTable" {
             
             # CosmosDB Account
             $apiVersion = "2015-04-08"
+            $locations = @(
+                @{ "locationName"=$Location; "failoverPriority"=0 }
+            )
             $accountProperties = @{
                 "databaseAccountOfferType"="Standard";
-                "capabilities"= @( @{ "name"="EnableTable" } ) 
+                "capabilities"= @( @{ "name"="EnableTable" };
+                    )
+                "enableMultipleWriteLocations"= $false;
+                "isVirtualNetworkFilterEnabled"= $false
+                "locations"=$locations
             }
-
+            $tags = @{
+                "defaultExperience"="Azure Table";
+                "hidden-cosmos-mmspecial"=""
+            }
+ 
             New-AzResource -ResourceType "Microsoft.DocumentDB/databaseAccounts" `
                 -ApiVersion $apiVersion `
                 -ResourceGroupName $resourceGroup `
                 -Location $Location `
                 -Name $uniqueString `
+                -Tag $tags `
+                -Kind "GlobalDocumentDB" `
                 -PropertyObject $accountProperties `
                 -Force
         }
         
         # Preparing tables for inserts, deletes and updates
         $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
-
         $GetCosmosDbTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -CosmosDbAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
         
         $tables = [System.Collections.ArrayList]@()
-        $tableNames = @("table$($uniqueString)insert", "table$($uniqueString)delete")
+        
+        # Storage tables
+        $storageTableNames = @("table$($uniqueString)insert", "table$($uniqueString)delete")
         foreach ($tableName in $tableNames)
         {
-            #Storage Test
             Write-Host -for DarkGreen "   Creating Storage Table $($tableName)"
             $Table = Invoke-Expression("Get-AzTableTable -table `$tableName $GetTableCommand")
             Write-Host -for Green "      Created Table $($table | out-string)"
             $tables.Add($table)
-            
-            #CosmosDB Test
-            Write-Host -for DarkGreen "   Creating CosmosDB Table $($tableName)"
-            $cosmosTable = Invoke-Expression("Get-AzTableTable -table `"`cosmos$tableName`" $GetCosmosDbTableCommand")
-            Write-Host -for Green "      Created CosmosDB Table $($table | out-string)"
-            $tables.Add($cosmosTable)
+        }
+
+        # Cosmos DB tables
+        $cosmosDbTableNames = @("cosmosdbtable$($uniqueString)insert", "cosmosdbtable$($uniqueString)delete")
+        foreach ($tableName in $cosmosDbTableNames)
+        {
+            Write-Host -for DarkGreen "   Creating CosmosDB Table cosmos$($tableName)"
+            $cosmosDbTable = Invoke-Expression("Get-AzTableTable -table `$tableName $GetCosmosDbTableCommand")
+            Write-Host -for Green "      Created CosmosDB Table $($cosmosTable | out-string)"
+            $tables.Add($cosmosDbTable)
         }
     }
 
@@ -104,80 +121,92 @@ Describe "AzureRmStorageTable" {
 
     Context "Add-AzTableRow" {
         BeforeAll {
-            $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
+            $tableInserts = $tables | Where-Object -Property Name -like "*$($uniqueString)insert"
         }
 
-        It "Can add entity" {
-            $entity = $null
-            $expectedPK = [guid]::NewGuid().Guid
-            $expectedRK = [guid]::NewGuid().Guid
-      
-            Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
+        for ($i = 0; $i -lt $tableInserts.Count; $i++)
+        {
+            if ($i -eq 0)
+            {
+                $dataStore = "StorageAccount"
+            }
+            else
+            {
+                $dataStore = "CosmosDb"
+            }
 
-            $entity = Get-AzTableRow -table $tableInsert
+            It "Can add entity ($dataStore)" {
+                $entity = $null
+                $expectedPK = [guid]::NewGuid().Guid
+                $expectedRK = [guid]::NewGuid().Guid
+        
+                Add-AzTableRow -table $tableInserts[$i] -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
-        }
+                $entity = Get-AzTableRow -table $tableInserts[$i]
 
-        It "Can add entity with empty partition key" {
-            $entity = $null
-            $expectedPK = ""
-            $expectedRK = [guid]::NewGuid().Guid
+                $entity.PartitionKey | Should be $expectedPK
+                $entity.RowKey | Should be $expectedRK
+            }
 
-            Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
+            It "Can add entity with empty partition key ($dataStore)" {
+                $entity = $null
+                $expectedPK = ""
+                $expectedRK = [guid]::NewGuid().Guid
 
-            $entity = Get-AzTableRow -table $tableInsert -partitionKey $expectedPK
+                Add-AzTableRow -table $tableInserts[$i] -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
-        }
+                $entity = Get-AzTableRow -table $tableInserts[$i] -partitionKey $expectedPK
 
-        It "Can add entity with empty row key" {
-            $entity = $null
-            $expectedPK = [guid]::NewGuid().Guid
-            $expectedRK = ""
+                $entity.PartitionKey | Should be $expectedPK
+                $entity.RowKey | Should be $expectedRK
+            }
 
-            Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
+            It "Can add entity with empty row key ($dataStore)" {
+                $entity = $null
+                $expectedPK = [guid]::NewGuid().Guid
+                $expectedRK = ""
 
-            $entity = Get-AzTableRow -table $tableInsert -columnName "RowKey" -value $expectedRK -operator Equal
+                Add-AzTableRow -table $tableInserts[$i] -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
-        }
+                $entity = Get-AzTableRow -table $tableInserts[$i] -columnName "RowKey" -value $expectedRK -operator Equal
 
-        It "Can add entity with empty partition and row keys" {
-            $entity = $null
-            $expectedPK = ""
-            $expectedRK = ""
+                $entity.PartitionKey | Should be $expectedPK
+                $entity.RowKey | Should be $expectedRK
+            }
 
-            Add-AzTableRow -table $tableInsert -partitionKey $expectedPK -rowKey $expectedRK -property @{}
+            It "Can add entity with empty partition and row keys ($dataStore)" {
+                $entity = $null
+                $expectedPK = ""
+                $expectedRK = ""
 
-            $entity = Get-AzTableRow -table $tableInsert -customFilter "(PartitionKey eq '$($expectedPK)') and (RowKey eq '$($expectedRK)')"
+                Add-AzTableRow -table $tableInserts[$i] -partitionKey $expectedPK -rowKey $expectedRK -property @{}
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
-        }
+                $entity = Get-AzTableRow -table $tableInserts[$i] -customFilter "(PartitionKey eq '$($expectedPK)') and (RowKey eq '$($expectedRK)')"
 
-        It "Can add entity with properties" {
-            $entity = $null
-            $expectedProperty1Content = "COMP01"
-            $expectedProperty2Content = "Windows 10"
-            $PK = [guid]::NewGuid().Guid
-            $RK = [guid]::NewGuid().Guid
+                $entity.PartitionKey | Should be $expectedPK
+                $entity.RowKey | Should be $expectedRK
+            }
 
-            Add-AzTableRow -table $tableInsert -partitionKey $PK -rowKey $RK -property @{"computerName"=$expectedProperty1Content;"osVersion"=$expectedProperty2Content}
+            It "Can add entity with properties ($dataStore)" {
+                $entity = $null
+                $expectedProperty1Content = "COMP01"
+                $expectedProperty2Content = "Windows 10"
+                $PK = [guid]::NewGuid().Guid
+                $RK = [guid]::NewGuid().Guid
 
-            $entity = Get-AzTableRow -table $tableInsert -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
+                Add-AzTableRow -table $tableInserts[$i] -partitionKey $PK -rowKey $RK -property @{"computerName"=$expectedProperty1Content;"osVersion"=$expectedProperty2Content}
 
-            $entity.computerName | Should be $expectedProperty1Content
-            $entity.osVersion | Should be $expectedProperty2Content
+                $entity = Get-AzTableRow -table $tableInserts[$i] -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
+
+                $entity.computerName | Should be $expectedProperty1Content
+                $entity.osVersion | Should be $expectedProperty2Content
+            }
         }
     }
 
     Context "Get-AzTableRow" {
         BeforeAll {
-            $tableInserts = $tables | Where-Object -Property Name -EQ "table$($uniqueString)insert"
+            $tableInserts = $tables | Where-Object -Property Name -like "*$($uniqueString)insert"
             $partitionKey = [guid]::NewGuid().tostring()
             $rowKey = [guid]::NewGuid().tostring()
             
@@ -346,21 +375,21 @@ Describe "AzureRmStorageTable" {
     AfterAll { 
         Write-Host -for DarkGreen "Cleanup in process"
 
-        if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
-        {
-            Remove-AzResourceGroup -Name $resourceGroup -Force
-        }
-        else
-        {
-            Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
-            foreach ($tableName in $tableNames)
-            {
-                if (-not $tableName.StartsWith("cosmos"))
-                {
-                    Remove-AzStorageTable -Context $context -Name $tableName -Force
-                }
-            }
-        }
+        # if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
+        # {
+        #     Remove-AzResourceGroup -Name $resourceGroup -Force
+        # }
+        # else
+        # {
+        #     Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
+        #     foreach ($tableName in $tableNames)
+        #     {
+        #         if (-not $tableName.StartsWith("cosmos"))
+        #         {
+        #             Remove-AzStorageTable -Context $context -Name $tableName -Force
+        #         }
+        #     }
+        # }
 
         Write-Host -for DarkGreen "Done"
     }
