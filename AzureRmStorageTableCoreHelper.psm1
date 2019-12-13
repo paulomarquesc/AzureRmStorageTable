@@ -159,15 +159,22 @@ function Get-AzTableTable
 			$accountName = $cosmosDbAccountName
 		}
 		
-		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $accountName -Force
+		$keys = Invoke-AzResourceAction -Action listKeys -ResourceType $ResourceType -ApiVersion $apiVersion -ResourceGroupName $resourceGroup -Name $accountName -Force -ErrorAction SilentlyContinue
 		
 		if ($null -ne $keys)
-		{		
-			$key = @{$true = $keys.keys[0].value; $false = $keys.primaryMasterKey}[($PSCmdlet.ParameterSetName -eq "AzTableStorage")]
+		{	
+			if ($PSCmdlet.ParameterSetName -eq "AzTableStorage")
+			{
+				$key = $keys.keys[0].value
+			}
+			else
+			{
+				$key = $keys.primaryMasterKey
+			}
 		}		
 		else
 		{
-			throw "An error ocurred while obtaining keys from $accountName."    
+			throw "An error ocurred while obtaining keys from $accountName - $($PSCmdlet.ParameterSetName)."    
 		}
 		
 		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$accountName,$key)
@@ -189,7 +196,7 @@ function Get-AzTableTable
 		$Table.CreateIfNotExistsAsync() | Out-Null
 	}
 
-	# Checking if there a table got returned
+	# Checking if a table got returned
 	if ($Table -eq $null)
 	{
 		throw $nullTableErrorMessage
