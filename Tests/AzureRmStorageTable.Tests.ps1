@@ -1,25 +1,25 @@
 [CmdletBinding()]
 param
 (
-    [Parameter(Mandatory=$false,ParameterSetName="AzureStorage")]
-    [string]$Location="westus",
+    [Parameter(Mandatory=$false,ParameterSetName="AzureAccount")]
+    [string]$Location="west us",
 
-    [Parameter(Mandatory=$false,ParameterSetName="AzureStorage")]
+    [Parameter(Mandatory=$false,ParameterSetName="AzureAccount")]
     [string]$SubscriptionId
 )
 
 Import-Module .\AzTable.psd1 -Force
 
-#$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
-$uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
+$uniqueString = Get-Date ([datetime]::UtcNow) -Format "p\s\te\s\tyyMMdd\tHHmmss\zfff"
+#$uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
 
 $resourceGroup = "$uniqueString-rg"
 
-$GetAzTableTableCmdtTableName = "TestTable"
+$testTableName = "TestTable"
 
 Describe "AzureRmStorageTable" {
     BeforeAll {
-        if ($PSCmdlet.ParameterSetName -ne "AzureStorage")
+        if ($PSCmdlet.ParameterSetName -ne "AzureAccount")
         {
             # Storage Emulator
             $context = Az.Storage\New-AzStorageContext -Local
@@ -29,94 +29,87 @@ Describe "AzureRmStorageTable" {
             Select-AzSubscription -SubscriptionId $SubscriptionId
             New-AzResourceGroup -Name $resourceGroup -Location $Location
             
-            # Storage Account            
+            # Storage Account
             New-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Location $Location -SkuName Standard_LRS -Kind StorageV2
             $context = (Get-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup).Context
             
             # CosmosDB Account
-            $apiVersion = "2015-04-08"
-            $locations = @(
-                @{ "locationName"=$Location; "failoverPriority"=0 }
-            )
             $accountProperties = @{
                 "databaseAccountOfferType"="Standard";
-                "capabilities"= @( @{ "name"="EnableTable" };
-                    )
-                "enableMultipleWriteLocations"= $false;
-                "isVirtualNetworkFilterEnabled"= $false
-                "locations"=$locations
+                "capabilities"=@( @{"name"="EnableTable"} );
+                "locations"=@( @{"locationName"=$Location; "failoverPriority"=0} );
+                "consistencyPolicy"=@{"defaultConsistencyLevel"="Session"}
             }
-            $tags = @{
-                "defaultExperience"="Azure Table";
-                "hidden-cosmos-mmspecial"=""
-            }
- 
-            New-AzResource -ResourceType "Microsoft.DocumentDB/databaseAccounts" `
-                -ApiVersion $apiVersion `
+            New-AzResource `
+                -ResourceType "Microsoft.DocumentDB/databaseAccounts" `
                 -ResourceGroupName $resourceGroup `
                 -Location $Location `
                 -Name $uniqueString `
-                -Tag $tags `
                 -Kind "GlobalDocumentDB" `
                 -PropertyObject $accountProperties `
                 -Force
         }
         
         # Preparing tables for inserts, deletes and updates
-        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
-        $GetCosmosDbTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -CosmosDbAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+        $GetStorageTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureAccount")]
+        $GetCosmosDbTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -CosmosDbAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureAccount")]
         
         $tables = [System.Collections.ArrayList]@()
         
         # Storage tables
-        $storageTableNames = @("table$($uniqueString)insert", "table$($uniqueString)delete")
-        foreach ($tableName in $tableNames)
+        $storageTableNames = @("storageTable$($uniqueString)insert", "storageTable$($uniqueString)delete")
+        foreach ($tableName in $storageTableNames)
         {
-            Write-Host -for DarkGreen "   Creating Storage Table $($tableName)"
-            $Table = Invoke-Expression("Get-AzTableTable -table `$tableName $GetTableCommand")
-            Write-Host -for Green "      Created Table $($table | out-string)"
-            $tables.Add($table)
+            Write-Host -for DarkGreen "    Creating Storage Table $($tableName)"
+            $storageTable = Invoke-Expression("Get-AzTableTable -table `$tableName $GetStorageTableCommand")
+            Write-Host -for Green "    Created Table $($storageTable | out-string)"
+            $tables.Add($storageTable)
         }
 
-        # Cosmos DB tables
-        $cosmosDbTableNames = @("cosmosdbtable$($uniqueString)insert", "cosmosdbtable$($uniqueString)delete")
-        foreach ($tableName in $cosmosDbTableNames)
+        # CosmosDB tables
+        if ($PSCmdlet.ParameterSetName -eq "AzureAccount")
         {
-            Write-Host -for DarkGreen "   Creating CosmosDB Table cosmos$($tableName)"
-            $cosmosDbTable = Invoke-Expression("Get-AzTableTable -table `$tableName $GetCosmosDbTableCommand")
-            Write-Host -for Green "      Created CosmosDB Table $($cosmosTable | out-string)"
-            $tables.Add($cosmosDbTable)
+            $cosmosTableNames = @("cosmosTable$($uniqueString)insert", "cosmosTable$($uniqueString)delete")
+            foreach ($tableName in $cosmosTableNames)
+            {
+                Write-Host -for DarkGreen "    Creating CosmosDB Table $($tableName)"
+                $cosmosTable = Invoke-Expression("Get-AzTableTable -table `$tableName $GetCosmosDbTableCommand")
+                Write-Host -for Green "    Created CosmosDB Table $($cosmosTable | out-string)"
+                $tables.Add($cosmosTable)
+            }
         }
     }
 
     Context "Get-AzTableTable" {
 
         #Azure storage create and open a table
-        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+        $GetStorageTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureAccount")]
         
-        It "Can create a new table(Storage account)" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+        It "Can create a new table (Storage account)" {
+            $Table = Invoke-Expression("Get-AzTableTable -table `$testTableName $GetStorageTableCommand") 
             $Table | Should not be $null
         }
 
         It "Can open an existing table (Storage account)" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table = Invoke-Expression("Get-AzTableTable -table `$testTableName $GetStorageTableCommand") 
             $Table | Should not be $null
         }
         
         # CosmosDB create and open a table
-        $GetCosmosDbTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -CosmosDbAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+        if ($PSCmdlet.ParameterSetName -eq "AzureAccount")
+        {
+            $GetCosmosDbTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -CosmosDbAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureAccount")]
         
-        It "Can create a new table (CosmosDb account)" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetCosmosDbTableCommand") 
-            $Table | Should not be $null
-        }
+            It "Can create a new table (CosmosDb account)" {
+                $Table = Invoke-Expression("Get-AzTableTable -table `$testTableName $GetCosmosDbTableCommand") 
+                $Table | Should not be $null
+            }
 
-        It "Can open an existing table (CosmosDb account)" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetCosmosDbTableCommand") 
-            $Table | Should not be $null
+            It "Can open an existing table (CosmosDb account)" {
+                $Table = Invoke-Expression("Get-AzTableTable -table `$testTableName $GetCosmosDbTableCommand") 
+                $Table | Should not be $null
+            }
         }
-        
     }
 
     Context "Add-AzTableRow" {
@@ -132,7 +125,7 @@ Describe "AzureRmStorageTable" {
             }
             else
             {
-                $dataStore = "CosmosDb"
+                $dataStore = "CosmosDbAccount"
             }
 
             It "Can add entity ($dataStore)" {
@@ -227,7 +220,7 @@ Describe "AzureRmStorageTable" {
             }
             else
             {
-                $dataStore = "CosmosDb"
+                $dataStore = "CosmosDbAccount"
             }
             
             It "Can it get all rows ($dataStore)" {
@@ -349,45 +342,54 @@ Describe "AzureRmStorageTable" {
     
     Context "Update-AzTableRow" {
         BeforeAll {
-            $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
+            $tableInserts = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
         }
 
-        It "Can it update an entity" {
-            $expectedValue = "NeedsOsUpgrade"
+        for ($i = 0; $i -lt $tableInserts.Count; $i++)
+        {
+            if ($i -eq 0)
+            {
+                $dataStore = "StorageAccount"
+            }
+            else
+            {
+                $dataStore = "CosmosDbAccount"
+            }
+
+            It "Can it update an entity ($dataStore)" {
+                $expectedValue = "NeedsOsUpgrade"
             
-            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
-            $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
-            $UpdateEntity.status | Should Be $expectedValue
+                [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
+                $UpdateEntity = Get-AzTableRow -table $tableInserts[$i] -customFilter $filter
+                $UpdateEntity.status | Should Be $expectedValue
 
-            # Changing values
-            $UpdateEntity.osVersion = "Windows 10"
-            $UpdateEntity.status = "OK"
+                # Changing values
+                $UpdateEntity.osVersion = "Windows 10"
+                $UpdateEntity.status = "OK"
 
-            # Updating the content
-            $UpdateEntity | Update-AzTableRow -table $tableInsert
+                # Updating the content
+                $UpdateEntity | Update-AzTableRow -table $tableInserts[$i]
 
-            # Getting the entity again to check the changes
-            $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
-            $UpdateEntity.status | Should Not Be $expectedValue
+                # Getting the entity again to check the changes
+                $UpdateEntity = Get-AzTableRow -table $tableInserts[$i] -customFilter $filter
+                $UpdateEntity.status | Should Not Be $expectedValue
+            }
         }
     }
 
     AfterAll { 
         Write-Host -for DarkGreen "Cleanup in process"
 
-        # if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
+        # if ($PSCmdlet.ParameterSetName -eq "AzureAccount")
         # {
         #     Remove-AzResourceGroup -Name $resourceGroup -Force
         # }
         # else
         # {
-        #     Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
+        #     Remove-AzStorageTable $testTableName -Context $context -Force
         #     foreach ($tableName in $tableNames)
         #     {
-        #         if (-not $tableName.StartsWith("cosmos"))
-        #         {
-        #             Remove-AzStorageTable -Context $context -Name $tableName -Force
-        #         }
+        #         Remove-AzStorageTable -Context $context -Name $tableName -Force
         #     }
         # }
 
