@@ -372,7 +372,7 @@ Get-AzTableRow -table $table | Remove-AzTableRow -table $table
 
 In order to run this module from within Azure Automation Runbooks, please make sure you follow the steps outlined at [Az module support in Azure Automation](https://docs.microsoft.com/en-us/azure/automation/az-modules).
 
-## Troubleshooting<a name="troubleshooting"></a>
+## Troubleshooting/Tips<a name="troubleshooting"></a>
 
 This section helps you troubleshoot some of the most common issues:
 
@@ -387,6 +387,9 @@ This section helps you troubleshoot some of the most common issues:
 * **The term 'Update-AzureStorageTableRow' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.**
     
     This error can happen with with other cmdlets as well, e.g. Get-AzureStorageTableTable, this happens because all cmdlets got renamed as previously mentioned in this article, aliases were created to keep compatibility but you need to perform an `Import-Module AzureRmStorageTable` or `Import-Module AzTable` in order to load the aliases since the module auto-load only happens for the cmdlets itself and not the aliases. I strongly advise that you rename your cmdlets as soon as possible to avoid future issues.
+
+* **(TIP) Your custom filtering requires a condition not provided by default**
+    If your column data type is not supported directly within the module, custom filtering can help, please refer to [#issue 35](https://github.com/paulomarquesc/AzureRmStorageTable/issues/35) and that shows an example on how to use other filtering options and a link to the SDK with all supported types.
 
 ## References<a name="references"></a>
 
