@@ -16,10 +16,10 @@ Copyright = '© Microsoft Corporation. All rights reserved.'
 Description = 'Sample functions to add/retrieve/update entities on Azure Storage Tables from PowerShell (This is the same as AzureRmStorageTable module but with a new module name). It requires latest PowerShell Az module installed. Instructions at https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-1.6.0. For documentation, please visit https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/.'
 
 # HelpInfo URI of this module
-HelpInfoUri = 'https://paulomarquesc.github.io/working-with-azure-storage-tables-from-powershell/'
+HelpInfoUri = 'https://github.com/paulomarquesc/AzureRmStorageTable/tree/master/docs'
 
 # Version number of this module
-ModuleVersion = '2.0.2'
+ModuleVersion = '2.0.3'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'
