@@ -22,13 +22,13 @@ steps:
       $PasswordString = "$(SpPassword)"
 
       Write-Verbose -Verbose "Installing modules"
-      Install-Module -Name Pester -AllowClobber -Force -Scope CurrentUser
+      Install-Module -Name Pester -MaximumVersion 4.10.0 -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Accounts -MinimumVersion 1.4.0 -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Storage -MinimumVersion 1.1.0 -AllowClobber -Force -Scope CurrentUser
       Install-module Az.Resources -MinimumVersion 1.2.1 -AllowClobber -Force -Scope CurrentUser
 
       Write-Verbose -Verbose "Importing modules"
-      Import-Module Pester
+      Import-Module Pester -RequiredVersion 4.10.0 
       Import-Module Az.Accounts
       Import-Module Az.Storage
       Import-Module Az.Resources
