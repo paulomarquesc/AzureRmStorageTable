@@ -42,7 +42,9 @@ function ExecuteQueryAsync
 		[Parameter(Mandatory=$true)]
 		$Table,
 		[Parameter(Mandatory=$true)]
-		$TableQuery
+		$TableQuery,
+		[Parameter()]
+		$Paginate = $true
 	)
 	# Internal function 
 	# Executes query in async mode
@@ -50,15 +52,20 @@ function ExecuteQueryAsync
 	if ($TableQuery -ne $null)
 	{
         $token = $null
-		$AllRows = @()
-		do
+		if ($Paginate)
+		{
+			do
+			{
+				$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
+				$token = $Results.Result.ContinuationToken
+				$Results.Result.Results
+			} while ($token)
+		}
+		else
 		{
 			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
-			$token = $Results.Result.ContinuationToken
-			$AllRows += $Results.Result.Results
-		} while ($token)
-	
-		return $AllRows
+			$Results.Result.Results
+		}
 	}
 }
 
@@ -513,12 +520,28 @@ function Get-AzTableRow
 	param
 	(
 		[Parameter(Mandatory=$true,ParameterSetName="GetAll")]
+		[Parameter(Mandatory=$true,ParameterSetName="byPartitionKey")]
+		[Parameter(Mandatory=$true,ParameterSetName="byPartRowKeys")]
+		[Parameter(Mandatory=$true,ParameterSetName="byColummnString")]
+		[Parameter(Mandatory=$true,ParameterSetName="byColummnGuid")]
+		[Parameter(Mandatory=$true,ParameterSetName="byCustomFilter")]
+		$Table,
+
+		[Parameter(ParameterSetName="GetAll")]
 		[Parameter(ParameterSetName="byPartitionKey")]
 		[Parameter(ParameterSetName="byPartRowKeys")]
 		[Parameter(ParameterSetName="byColummnString")]
 		[Parameter(ParameterSetName="byColummnGuid")]
 		[Parameter(ParameterSetName="byCustomFilter")]
-		$Table,
+		[int]$Take,
+
+		[Parameter(ParameterSetName="GetAll")]
+		[Parameter(ParameterSetName="byPartitionKey")]
+		[Parameter(ParameterSetName="byPartRowKeys")]
+		[Parameter(ParameterSetName="byColummnString")]
+		[Parameter(ParameterSetName="byColummnGuid")]
+		[Parameter(ParameterSetName="byCustomFilter")]
+		[bool]$Paginate,
 
 		[Parameter(Mandatory=$true,ParameterSetName="byPartitionKey")]
 		[Parameter(ParameterSetName="byPartRowKeys")]
@@ -595,10 +618,22 @@ function Get-AzTableRow
 		$TableQuery.FilterString = $Filter
 	}
 
+	if ($PSBoundParameters.Keys -Contains 'Take')
+	{
+		$TableQuery.TakeCount = $Take
+	}
+
 	# Getting results
 	if (($TableQuery.FilterString -ne $null) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
 	{
-		$Result = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		$splat = @{
+			Table = $Table
+			TableQuery = $TableQuery
+		}
+		if ($PSBoundParameters.Keys -contains 'Paginate') {
+			$splat['Paginate'] = $Paginate
+		}
+		$Result = ExecuteQueryAsync @splat
 
 		# if (-not [string]::IsNullOrEmpty($Result.Result.Results))
 		# {
