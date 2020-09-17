@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 2.0.3
+* Fixed issues with continuation token.
+
 ## Version 2.0.2
 * Implemented ContinuationToken logic while using ExecuteQuerySegmentedAsync to get more than 1000 rows.
 
