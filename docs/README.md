@@ -196,6 +196,13 @@ Result
 
 ![result all](./media/image392.png)
 
+#### Getting specific columns only
+
+```powershell
+$Columns = @('computerName','osVersion')
+Get-AzTableRow -Table $table -SelectColumns $Columns
+```
+
 #### Getting rows/entities by partition key
 
 ```powershell

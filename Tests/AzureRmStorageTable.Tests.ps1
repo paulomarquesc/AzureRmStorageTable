@@ -153,6 +153,14 @@ Describe "AzureRmStorageTable" {
             $entityList.Count | Should be $expectedRowCount
         }
 
+        It "Can it get specific columns for a specific row" {
+            $entity = $null
+            $expectedStringValue = "Windows 10"
+            $entity = Get-AzTableRow -Table $tableInsert -partitionKey $partitionKey -rowKey $rowKey -SelectColumns @('osVersion', 'computerName')
+            $entity.osVersion | Should be $expectedStringValue
+            $entity.status | Should be $null
+        }
+
         It "Can it get rows by partition key" {
             $entityList = $null
             $expectedRowCount = 4
