@@ -19,7 +19,7 @@ Description = 'Sample functions to add/retrieve/update entities on Azure Storage
 HelpInfoUri = 'https://github.com/paulomarquesc/AzureRmStorageTable/tree/master/docs'
 
 # Version number of this module
-ModuleVersion = '2.0.3'
+ModuleVersion = '2.0.4'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '4.0'

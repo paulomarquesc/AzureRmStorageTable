@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 2.0.4
+* Fixed issue #59, bug related to wrong null checking while deleting a row.
+  
 ## Version 2.0.3
 * Fixed issues with continuation token.
 
