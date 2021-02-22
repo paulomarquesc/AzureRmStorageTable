@@ -1,12 +1,5 @@
 steps:
 
-- task: AzureKeyVault@1
-  displayName: 'Azure Key Vault: AdminPassword'
-  inputs:
-    azureSubscription: azure-connection
-    KeyVaultName: pmckeyvault03
-    SecretsFilter: 'SpPassword'
-
 - task: PowerShell@1
   displayName: "Run pester"
   inputs:
@@ -17,26 +10,23 @@ steps:
 
       Write-Verbose -Verbose "Getting pipeline variables"
       $Location = "$(Parameters.Location)"
-      $SpName = "$(Parameters.SpName)"
-      $TenantId = "$(Parameters.TenantId)"
-      $PasswordString = "$(SpPassword)"
 
       Write-Verbose -Verbose "Installing modules"
       Install-Module -Name Pester -MaximumVersion 4.10.0 -AllowClobber -Force -Scope CurrentUser
-      Install-module Az.Accounts -MinimumVersion 1.4.0 -AllowClobber -Force -Scope CurrentUser
-      Install-module Az.Storage -MinimumVersion 1.1.0 -AllowClobber -Force -Scope CurrentUser
-      Install-module Az.Resources -MinimumVersion 1.2.1 -AllowClobber -Force -Scope CurrentUser
+      Install-Module Az.Accounts -MinimumVersion 2.2.5 -AllowClobber -Force -Scope CurrentUser
+      Install-Module Az.Storage -MinimumVersion 3.3.0 -AllowClobber -Force -Scope CurrentUser
+      Install-Module Az.Resources -MinimumVersion 3.2.1 -AllowClobber -Force -Scope CurrentUser
+      Install-Module Az.ManagedServiceIdentity -MinimumVersion 0.7.3 -AllowClobber -Force -Scope CurrentUser
 
       Write-Verbose -Verbose "Importing modules"
       Import-Module Pester -RequiredVersion 4.10.0 
       Import-Module Az.Accounts
       Import-Module Az.Storage
       Import-Module Az.Resources
+      Import-Module Az.ManagedServiceIdentity
 
       Write-Verbose -Verbose "Authenticating"
-      $Password = ConvertTo-SecureString -AsPlainText -Force $PasswordString
-      $Credential = New-Object System.Management.Automation.PSCredential ($SpName, $Password)
-      Connect-AzAccount -ServicePrincipal -Credential $Credential -TenantId $tenantId
+      Connect-AzAccount -Identity
 
       $SubscriptionId = (Get-AzContext).Subscription.id
       Write-Verbose -Verbose "Subscription-> $SubscriptionId"
