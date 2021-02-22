@@ -78,4 +78,3 @@ PS> Invoke-Pester @{Path="./Tests";Parameters=@{SubscriptionId='<your subscripti
 ```
 
 ![Invoke-Pester](AzureRmStorageTable-Pester.gif)
-
