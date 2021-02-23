@@ -200,7 +200,7 @@ Result
 
 ```powershell
 $Columns = @('computerName','osVersion')
-Get-AzTableRow -Table $table -SelectColumns $Columns
+Get-AzTableRow -Table $table -SelectColumn $Columns
 ```
 
 #### Getting rows/entities by partition key

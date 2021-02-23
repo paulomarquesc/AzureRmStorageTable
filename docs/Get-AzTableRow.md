@@ -42,9 +42,9 @@ Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>]
 ```powershell
 Get-AzTableRow -Table <Object> [<CommonParameters>]
 ```
-### SelectColumns
+### SelectColumn
 ```powershell
-Get-AzTableRow -Table <Object> [<CommonParameters>] -SelectColumns [<array>]
+Get-AzTableRow -Table <Object> [<CommonParameters>] -SelectColumn [<string[]>]
 ```
 
 ## DESCRIPTION
@@ -61,7 +61,7 @@ Get-AzTableRow -Table $Table
 Get-AzTableRow -Table $table -partitionKey NewYorkSite
 
 # Getting specific columns
-Get-AzTableRow -Table $table -partitionKey NewYorkSite -SelectColumns @('computerName', 'osVersion')
+Get-AzTableRow -Table $table -partitionKey NewYorkSite -SelectColumn @('computerName', 'osVersion')
 
 # Getting rows by partition and row key
 Get-AzTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
@@ -106,11 +106,11 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SelectColumns
+### -SelectColumn
 Columns to be fetched by the query
 
 ```yaml
-Type: Array
+Type: System.Collections.Generic.List[string]
 Parameter Sets: byCustomFilter, byColummnGuid, byColummnString, byPartRowKeys, byPartitionKey
 Aliases:
 

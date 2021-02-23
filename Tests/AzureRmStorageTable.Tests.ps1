@@ -156,7 +156,7 @@ Describe "AzureRmStorageTable" {
         It "Can it get specific columns for a specific row" {
             $entity = $null
             $expectedStringValue = "Windows 10"
-            $entity = Get-AzTableRow -Table $tableInsert -partitionKey $partitionKey -rowKey $rowKey -SelectColumns @('osVersion', 'computerName')
+            $entity = Get-AzTableRow -Table $tableInsert -partitionKey $partitionKey -rowKey $rowKey -SelectColumn @('osVersion', 'computerName')
             $entity.osVersion | Should be $expectedStringValue
             $entity.status | Should be $null
         }

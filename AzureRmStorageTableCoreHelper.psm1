@@ -480,7 +480,7 @@ function Get-AzTableRow
 		Identifies the table partition (byPartitionKey and byPartRowKeys parameter sets)
 	.PARAMETER RowKey
 		Identifies the row key in the partition (byPartRowKeys parameter set)
-	.PARAMETER SelectColumns
+	.PARAMETER SelectColumn
 		Names of the properties to return for each entity
 	.PARAMETER ColumnName
 		Column name to compare the value to (byColummnString and byColummnGuid parameter sets)
@@ -498,7 +498,7 @@ function Get-AzTableRow
 
 		# Getting specific properties for all rows
 		$columns = ('osVersion', 'computerName')
-		Get-AzTableRow -Table $Table -SelectColumns $columns
+		Get-AzTableRow -Table $Table -SelectColumn $columns
 
 		# Getting rows by partition key
 		Get-AzTableRow -Table $table -partitionKey NewYorkSite
@@ -532,7 +532,7 @@ function Get-AzTableRow
 		[Parameter(ParameterSetName="byColummnString")]
 		[Parameter(ParameterSetName="byColummnGuid")]
 		[Parameter(ParameterSetName="byCustomFilter")]
-		[array]$SelectColumns,
+		[System.Collections.Generic.List[string]]$SelectColumn,
 
 		[Parameter(Mandatory=$true,ParameterSetName="byPartitionKey")]
 		[Parameter(ParameterSetName="byPartRowKeys")]
@@ -610,12 +610,8 @@ function Get-AzTableRow
 	}
 
 	# Selecting columns if specified
-	if ($null -ne $SelectColumns){
-		[string[]]$Cols = $SelectColumns
-		$ColumnsList = New-Object System.Collections.Generic.List[string]
-		$ColumnsList.AddRange($Cols)
-
-		$TableQuery.SelectColumns = $ColumnsList
+	if ($null -ne $SelectColumn){
+		$TableQuery.SelectColumns = $SelectColumn
 	}
 
 	# Getting results
