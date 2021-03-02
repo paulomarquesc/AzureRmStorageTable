@@ -610,8 +610,7 @@ function Get-AzTableRow
 	}
 
 	# Selecting columns if specified
-	if ($null -ne $SelectColumn)
-	{
+	if ($null -ne $SelectColumn){
 		$TableQuery.SelectColumns = $SelectColumn
 	}
 
