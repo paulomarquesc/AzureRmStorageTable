@@ -42,6 +42,10 @@ Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>]
 ```powershell
 Get-AzTableRow -Table <Object> [<CommonParameters>]
 ```
+### SelectColumn
+```powershell
+Get-AzTableRow -Table <Object> [<CommonParameters>] -SelectColumn [<string[]>]
+```
 
 ## DESCRIPTION
 Used to return entities from a table with several options, this replaces all other Get-AzTable<XYZ> cmdlets.
@@ -56,6 +60,9 @@ Get-AzTableRow -Table $Table
 # Getting rows by partition key
 Get-AzTableRow -Table $table -partitionKey NewYorkSite
 
+# Getting specific columns
+Get-AzTableRow -Table $table -partitionKey NewYorkSite -SelectColumn @('computerName', 'osVersion')
+
 # Getting rows by partition and row key
 Get-AzTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
 
@@ -67,6 +74,7 @@ Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -oper
 
 # Getting rows using Custom Filter
 Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+
 ```
 
 ## PARAMETERS
@@ -92,6 +100,21 @@ Parameter Sets: GetAll
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SelectColumn
+Columns to be fetched by the query
+
+```yaml
+Type: System.Collections.Generic.List[string]
+Parameter Sets: byCustomFilter, byColummnGuid, byColummnString, byPartRowKeys, byPartitionKey
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
