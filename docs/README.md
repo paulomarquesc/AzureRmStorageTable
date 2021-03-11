@@ -19,6 +19,8 @@ This document shows how to work with Azure Storage Tables from PowerShell, throu
 
 ## Updates<a name="updates"></a>
 
+**Update 03/11/2021**: Included a new example at the [Troubleshooting](#troubleshooting) section provided by the Storage team on how to obtain a table based SAS token and consume it within this module.
+
 **Update 08/06/2019**: Comments were removed from the original blog post due to efforts to centralize discussions and/or issues into the module repo due to this module ownership being changed. If you have any issues/comments, please file a comment/issue [here](https://github.com/paulomarquesc/AzureRmStorageTable/issues).
 
 **Update 04/04/2019**: To avoid confusion if this module supports the new Az Powershell module, a new module name was released in the PowerShell Gallery under the name **AzTable**. The old name, **AzureRmStorageTable** will be kept in the gallery for compatibility purposes, both references the same code. This document will reference the new module name only.
@@ -396,7 +398,24 @@ This section helps you troubleshoot some of the most common issues:
     This error can happen with with other cmdlets as well, e.g. Get-AzureStorageTableTable, this happens because all cmdlets got renamed as previously mentioned in this article, aliases were created to keep compatibility but you need to perform an `Import-Module AzureRmStorageTable` or `Import-Module AzTable` in order to load the aliases since the module auto-load only happens for the cmdlets itself and not the aliases. I strongly advise that you rename your cmdlets as soon as possible to avoid future issues.
 
 * **(TIP) Your custom filtering requires a condition not provided by default**
+  
     If your column data type is not supported directly within the module, custom filtering can help, please refer to [#issue 35](https://github.com/paulomarquesc/AzureRmStorageTable/issues/35) and that shows an example on how to use other filtering options and a link to the SDK with all supported types.
+
+* **(TIP) How to obtain the CloudTable object from a table based SAS Token**
+  
+    This code sample can be used as a basis on how to obtain the CloudTable object from a table SAS token:
+
+    ```powershell
+    # sample table SAS URI
+    $tableSASUri = "https://[accountName].table.core.windows.net/[tableName]?sv=2017-07-29&tn=[tableName]&sig=[hidden]&se=2021-03-15T07%3A00%3A09Z&sp=raud"
+
+    # create CloudTable object from the SAS URI
+    $uri = [System.Uri]$tableSASUri
+    $CloudTable= New-Object -TypeName Microsoft.Azure.Cosmos.Table.CloudTable $uri 
+
+    # Use the CloudTable object to run cmdlets in module AzTable
+    Get-AzTableRow -Table $CloudTable 
+    ```
 
 ## References<a name="references"></a>
 
