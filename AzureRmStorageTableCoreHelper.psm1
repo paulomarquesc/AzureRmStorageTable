@@ -56,6 +56,23 @@ function ExecuteQueryAsync
 			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
 			$token = $Results.Result.ContinuationToken
 			$AllRows += $Results.Result.Results
+			# TakeCount controls the number of results returned per page, not
+			# for the entire query. See e.g. the note in
+			# https://docs.microsoft.com/azure/cosmos-db/table-storage-design-guide#retrieve-large-numbers-of-entities-from-a-query
+			if (($null -ne $token) -and ($null -ne $TableQuery.TakeCount))
+			{
+				# If the take count is larger than the number of rows in this
+				# segment, there are more rows to return.
+				if ($TableQuery.TakeCount -gt $Results.Result.Results.Count)
+				{
+					$TableQuery.TakeCount -= $Results.Result.Results.Count
+				}
+				else
+				{
+					# No more rows are available in the current page.
+					break
+				}
+			}
 		} while ($token)
 	
 		return $AllRows
@@ -294,9 +311,14 @@ function Get-AzTableRowByPartitionKey
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
 	.PARAMETER PartitionKey
 		Identifies the table partition
+	.PARAMETER Top
+		Return only the first n rows from the query
 	.EXAMPLE
 		# Getting rows by partition Key
 		Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey"
+	.EXAMPLE
+		# Getting rows by partition key with a maximum number returned
+		Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey" -Top 10
 	#>
 	[CmdletBinding()]
 	param
@@ -306,13 +328,16 @@ function Get-AzTableRowByPartitionKey
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
-		[string]$PartitionKey
+		[string]$PartitionKey,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[Int32]]$Top = $null
 	)
 	
 	Write-Verbose $DeprecatedMessage -Verbose
 
 	# Filtering by Partition Key
-	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey
+	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey -Top $Top
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -333,10 +358,15 @@ function Get-AzTableRowByPartitionKeyRowKey
 		Identifies the table partition
 	.PARAMETER RowKey
         Identifies the row key in the partition
+	.PARAMETER Top
+		Return only the first n rows from the query
 	.EXAMPLE
 		# Getting rows by Partition Key and Row Key
 		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345"	
-	#>
+	.EXAMPLE
+		# Getting rows by Partition Key and Row Key, with a maximum number returned
+		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345" -Top 10
+		#>
 	[CmdletBinding()]
 	param
 	(
@@ -349,14 +379,17 @@ function Get-AzTableRowByPartitionKeyRowKey
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
-		[string]$RowKey
+		[string]$RowKey,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[Int32]]$Top = $null
 	)
 	
 	# Filtering by Partition Key and Row Key
 
 	Write-Verbose $DeprecatedMessage -Verbose
 
-	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey $RowKey
+	$Result = Get-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey $RowKey -Top $Top
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -381,9 +414,14 @@ function Get-AzTableRowByColumnName
 		Value that will be looked for in the defined column as Guid
 	.PARAMETER Operator
 		Supported comparison Operator. Valid values are "Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual"
+	.PARAMETER Top
+		Return only the first n rows from the query
 	.EXAMPLE
 		# Getting row by firstname
 		Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal
+	.EXAMPLE
+		# Getting row by firstname with a maximum number of rows returned
+		Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal -Top 10
 	#>
 	[CmdletBinding()]
 	param
@@ -403,7 +441,10 @@ function Get-AzTableRowByColumnName
 
 		[Parameter(Mandatory=$true)]
 		[validateSet("Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual")]
-		[string]$Operator
+		[string]$Operator,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[Int32]]$Top = $null
 	)
 
 	Write-Verbose $DeprecatedMessage -Verbose
@@ -412,11 +453,11 @@ function Get-AzTableRowByColumnName
 
 	if ($PSCmdlet.ParameterSetName -eq "byString")
 	{			
-		Get-AzTableRow -Table $Table -ColumnName $ColumnName -value $Value -Operator $Operator
+		Get-AzTableRow -Table $Table -ColumnName $ColumnName -value $Value -Operator $Operator -Top $Top
 	}
 	else
 	{
-		Get-AzTableRow -Table $Table -ColumnName $ColumnName -GuidValue $GuidValue -Operator $Operator
+		Get-AzTableRow -Table $Table -ColumnName $ColumnName -GuidValue $GuidValue -Operator $Operator -Top $Top
 	}
 
 	if (-not [string]::IsNullOrEmpty($Result))
@@ -437,6 +478,8 @@ function Get-AzTableRowByCustomFilter
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
 	.PARAMETER CustomFilter
 		Custom Filter string.
+	.PARAMETER Top
+		Return only the first n rows from the query
 	.EXAMPLE
 		# Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
 	$MyFilter = "(firstName eq 'User1')"
@@ -444,6 +487,9 @@ function Get-AzTableRowByCustomFilter
 	.EXAMPLE
 		# Getting row by firstname by using text Filter directly (oData Filter format)
 		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"
+	.EXAMPLE
+		# Getting row by firstname by using text Filter directly with a maximum number of rows returned
+		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')" -Top 10
 	#>
 	[CmdletBinding()]
 	param
@@ -452,14 +498,17 @@ function Get-AzTableRowByCustomFilter
 		$Table,
 
 		[Parameter(Mandatory=$true)]
-		[string]$CustomFilter
+		[string]$CustomFilter,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[Int32]]$Top = $null
 	)
 	
 	Write-Verbose $DeprecatedMessage -Verbose
 
 	# Custom Filter
 
-	$Result = Get-AzTableRow -Table $Table -CustomFilter $CustomFilter
+	$Result = Get-AzTableRow -Table $Table -CustomFilter $CustomFilter -Top $Top
 
 	if (-not [string]::IsNullOrEmpty($Result))
 	{
@@ -492,28 +541,33 @@ function Get-AzTableRow
 		Supported comparison Operator. Valid values are "Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual" (byColummnString and byColummnGuid parameter sets)
 	.PARAMETER CustomFilter
 		Custom Filter string (byCustomFilter parameter set)
+	.PARAMETER Top
+		Return only the first n rows from the query (all parameter sets)
 	.EXAMPLE
 		# Getting all rows
 		Get-AzTableRow -Table $Table
-
+	.EXAMPLE
 		# Getting specific properties for all rows
 		$columns = ('osVersion', 'computerName')
 		Get-AzTableRow -Table $Table -SelectColumn $columns
-
+	.EXAMPLE
 		# Getting rows by partition key
 		Get-AzTableRow -Table $table -partitionKey NewYorkSite
-
+	.EXAMPLE
 		# Getting rows by partition and row key
 		Get-AzTableRow -Table $table -partitionKey NewYorkSite -rowKey "afc04476-bda0-47ea-a9e9-7c739c633815"
-
+	.EXAMPLE
 		# Getting rows by Columnm Name using Guid columns in table
 		Get-AzTableRow -Table $Table -ColumnName "id" -guidvalue "5fda3053-4444-4d23-b8c2-b26e946338b6" -operator Equal
-
+	.EXAMPLE
 		# Getting rows by Columnm Name using string columns in table
 		Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -operator Equal
-
+	.EXAMPLE
 		# Getting rows using Custom Filter
 		Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+	.EXAMPLE
+		# Querying with a maximum number of rows returned
+		Get-AzTableRow -Table $Table -partitionKey NewYorkSite -Top 10
 	#>
 	[CmdletBinding()]
 	param
@@ -560,7 +614,10 @@ function Get-AzTableRow
 		[string]$Operator,
 		
 		[Parameter(Mandatory=$true, ParameterSetName="byCustomFilter")]
-		[string]$CustomFilter
+		[string]$CustomFilter,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[Int32]]$Top = $null
 	)
 
 	$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
@@ -612,6 +669,12 @@ function Get-AzTableRow
 	# Selecting columns if specified
 	if ($null -ne $SelectColumn){
 		$TableQuery.SelectColumns = $SelectColumn
+	}
+
+	# Set number of rows to return.
+	if ($null -ne $Top)
+	{
+		$TableQuery.TakeCount = $Top
 	}
 
 	# Getting results

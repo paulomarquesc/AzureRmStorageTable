@@ -12,8 +12,14 @@ Gets a Table object to be used in all other cmdlets.
 
 ## SYNTAX
 
+### AzTableStorage
 ```powershell
 Get-AzTableTable -resourceGroup <String> -TableName <String> -storageAccountName <String> [<CommonParameters>]
+```
+
+### AzStorageEmulator
+```powershell
+Get-AzTableTable -TableName <String> [-UseStorageEmulator] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -37,7 +43,7 @@ Resource Group where the Azure Storage Account is located
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: AzTableStorage
 Aliases:
 
 Required: True
@@ -67,12 +73,27 @@ Storage Account name where the table lives
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: AzTableStorage
 Aliases:
 
 Required: True
 Position: Named
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UseStorageEmulator
+{{ Fill UseStorageEmulator Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: AzStorageEmulator
+Aliases:
+
+Required: True
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

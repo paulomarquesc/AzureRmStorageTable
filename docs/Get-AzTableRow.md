@@ -14,34 +14,40 @@ Returns all rows/entities from a storage table - no Filtering
 
 ### byCustomFilter
 ```powershell
-Get-AzTableRow [-Table <Object>] -CustomFilter <String> [<CommonParameters>]
+Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ -CustomFilter <String> [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### byColummnGuid
 ```powershell
-Get-AzTableRow [-Table <Object>] [-ColumnName <String>] -GuidValue <Guid> [-Operator <String>]
- [<CommonParameters>]
+Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ [-ColumnName <String>] -GuidValue <Guid> [-Operator <String>] [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### byColummnString
 ```powershell
-Get-AzTableRow [-Table <Object>] -ColumnName <String> -Value <String> -Operator <String> [<CommonParameters>]
+Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ -ColumnName <String> -Value <String> -Operator <String> [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### byPartRowKeys
 ```powershell
-Get-AzTableRow [-Table <Object>] [-PartitionKey <String>] -RowKey <String> [<CommonParameters>]
+Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ [-PartitionKey <String>] -RowKey <String> [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### byPartitionKey
 ```powershell
-Get-AzTableRow [-Table <Object>] -PartitionKey <String> [<CommonParameters>]
+Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ -PartitionKey <String> [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### GetAll
 ```powershell
-Get-AzTableRow -Table <Object> [<CommonParameters>]
+Get-AzTableRow -Table <Object> [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
+ [-Top <Int32>] [<CommonParameters>]
 ```
+
 ### SelectColumn
 ```powershell
 Get-AzTableRow -Table <Object> [<CommonParameters>] -SelectColumn [<string[]>]
@@ -74,6 +80,9 @@ Get-AzTableRow -Table $Table -ColumnName "osVersion" -value "Windows NT 4" -oper
 
 # Getting rows using Custom Filter
 Get-AzTableRow -Table $Table -CustomFilter "(osVersion eq 'Windows NT 4') and (computerName eq 'COMP07')"
+
+# Querying with a maximum number of rows returned
+Get-AzTableRow -Table $Table -partitionKey NewYorkSite -Top 10
 
 ```
 
@@ -110,8 +119,8 @@ Accept wildcard characters: False
 Columns to be fetched by the query
 
 ```yaml
-Type: System.Collections.Generic.List[string]
-Parameter Sets: byCustomFilter, byColummnGuid, byColummnString, byPartRowKeys, byPartitionKey
+Type: System.Collections.Generic.List`1[System.String]
+Parameter Sets: (All)
 Aliases:
 
 Required: False
@@ -257,6 +266,21 @@ Parameter Sets: byCustomFilter
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return only the first n rows from the query (all parameter sets)
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

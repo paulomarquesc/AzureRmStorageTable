@@ -14,7 +14,7 @@ Returns one entity based on Partition Key and RowKey
 
 ```powershell
 Get-AzTableRowByPartitionKeyRowKey [-Table] <Object> [-PartitionKey] <String> [-RowKey] <String>
- [<CommonParameters>]
+ [[-Top] <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -26,6 +26,12 @@ Returns one entity based on Partition Key and RowKey
 ```powershell
 # Getting rows by Partition Key and Row Key
 Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345"
+```
+
+### EXAMPLE 2
+```powershell
+# Getting rows by Partition Key and Row Key, with a maximum number returned
+Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345" -Top 10
 ```
 
 ## PARAMETERS
@@ -70,6 +76,21 @@ Aliases:
 
 Required: True
 Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return only the first n rows from the query
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

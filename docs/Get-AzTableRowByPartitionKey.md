@@ -13,7 +13,7 @@ Returns one or more rows/entities based on Partition Key
 ## SYNTAX
 
 ```powershell
-Get-AzTableRowByPartitionKey [-Table] <Object> [-PartitionKey] <String> [<CommonParameters>]
+Get-AzTableRowByPartitionKey [-Table] <Object> [-PartitionKey] <String> [[-Top] <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -25,6 +25,12 @@ Returns one or more rows/entities based on Partition Key
 ```powershell
 # Getting rows by partition Key
 Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey"
+```
+
+### EXAMPLE 2
+```powershell
+# Getting rows by partition key with a maximum number returned
+Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey" -Top 10
 ```
 
 ## PARAMETERS
@@ -54,6 +60,21 @@ Aliases:
 
 Required: True
 Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return only the first n rows from the query
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
