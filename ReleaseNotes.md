@@ -1,5 +1,8 @@
 # Release Notes
 
+## Version 2.1.0
+* Get-AzTableRow now supports two new optional parameters, `-top` and `-SelectColumn`, many thanks to @backerman and @StephenFerrero for these contributions
+  
 ## Version 2.0.4
 * Fixed issue #59, bug related to wrong null checking while deleting a row.
   
