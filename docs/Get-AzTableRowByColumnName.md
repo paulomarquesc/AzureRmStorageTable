@@ -15,13 +15,13 @@ Returns one or more rows/entities based on a specified column and its value
 ### byString
 ```powershell
 Get-AzTableRowByColumnName -Table <Object> -ColumnName <String> -Value <String> -Operator <String>
- [<CommonParameters>]
+ [-Top <Int32>] [<CommonParameters>]
 ```
 
 ### byGuid
 ```powershell
 Get-AzTableRowByColumnName -Table <Object> -ColumnName <String> -GuidValue <Guid> -Operator <String>
- [<CommonParameters>]
+ [-Top <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,6 +33,12 @@ Returns one or more rows/entities based on a specified column and its value
 ```powershell
 # Getting row by firstname
 Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal
+```
+
+### EXAMPLE 2
+```powershell
+# Getting row by firstname with a maximum number of rows returned
+Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal -Top 10
 ```
 
 ## PARAMETERS
@@ -107,6 +113,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return only the first n rows from the query
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

@@ -168,6 +168,13 @@ Describe "AzureRmStorageTable" {
             $entityList.Count | Should be $expectedRowCount
         }
 
+        It "Can it get rows by partition key, limiting the number of results" {
+            $entityList = $null
+            $expectedRowCount = 2
+            $entityList = Get-AzTableRow -table $tableInsert -partitionKey $partitionKey -Top 2
+            $entityList.Count | Should be $expectedRowCount
+        }
+
         It "Can it get row by partition and row key" {
             $entityList = $null
             $expectedRowCount = 1
@@ -195,6 +202,20 @@ Describe "AzureRmStorageTable" {
             $entityList = $null
             $expectedRowCount = 1
             $entityList = @(Get-AzTableRow -Table $tableInsert -CustomFilter "(osVersion eq 'Windows XP') and (computerName eq 'COMP04')")
+            $entityList.Count | Should be $expectedRowCount
+        }
+
+        It "Can limit the number of results" {
+            $entityList = $null
+            $expectedRowCount = 5
+            $entityList = Get-AzTableRow -table $tableInsert -Top 5
+            $entityList.Count | Should be $expectedRowCount
+        }
+
+        It "Doesn't break when there are more rows than TakeCount" {
+            $entityList = $null
+            $expectedRowCount = 10
+            $entityList = Get-AzTableRow -table $tableInsert -Top 86
             $entityList.Count | Should be $expectedRowCount
         }
     }

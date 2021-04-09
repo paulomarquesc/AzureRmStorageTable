@@ -13,7 +13,7 @@ Returns one or more rows/entities based on custom Filter.
 ## SYNTAX
 
 ```powershell
-Get-AzTableRowByCustomFilter [-Table] <Object> [-CustomFilter] <String> [<CommonParameters>]
+Get-AzTableRowByCustomFilter [-Table] <Object> [-CustomFilter] <String> [[-Top] <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -34,6 +34,12 @@ Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $MyFilter
 ```powershell
 # Getting row by firstname by using text Filter directly (oData Filter format)
 Get-AzTableRowByCustomFilter -Table $Table -CustomFilter "(firstName eq 'User1') and (lastName eq 'LastName1')"
+```
+
+### EXAMPLE 3
+```powershell
+# Getting row by firstname with a maximum number of rows returned
+Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" -Operator Equal -Top 10
 ```
 
 ## PARAMETERS
@@ -63,6 +69,21 @@ Aliases:
 
 Required: True
 Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Top
+Return only the first n rows from the query
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
