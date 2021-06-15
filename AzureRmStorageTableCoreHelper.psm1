@@ -846,6 +846,97 @@ function Remove-AzTableRow
 	}
 }
 
+function Remove-AzTableRows
+{
+	<#
+	.SYNOPSIS
+		Remove-AzTableRows - Removes multiple table rows in batches
+	.DESCRIPTION
+		Remove-AzTableRow - Removes multiple table rows in batches for strong and fast performance. It expects an array of entities that contain a RowKey and Partition Key - the Etag value is optional.
+		Batches are grouped by the PartitionKey - if each row you pass in has a unique partitionkey, performance will be the same as removing each row individually with Remove-AzTableRow
+	.PARAMETER Table
+		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+	.PARAMETER Entities
+		Array of entity objects that contain  PartitionKey and RowKey keys. Optionally, you may include the etag key.
+	.PARAMETER BatchSize
+		Batch size for the batch delete operation. 100 is the maximum.
+	.EXAMPLE
+		# Deleting an entry by entity PS Object
+		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
+		[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
+		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
+		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		$personToDelete | Remove-AzTableRow -Table $Table -Entities $personToDelete
+	.EXAMPLE
+		# Deleting everything
+		$rows = Get-AzTableRow -Table $Table 
+		Remove-AzTableRow -Table $Table -entities $rows
+	#>
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory=$true)]
+		$Table,
+
+		[Parameter(Mandatory=$true)]
+		[object[]]$Entities,
+
+		[Parameter()]
+		[Int]$BatchSize = 100
+	)
+
+	process
+	{
+
+		$results = @()
+		$BatchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+
+		$Partitions = $Entities | Group-Object -Property "PartitionKey"
+
+		$batch = 1;
+
+		foreach($PartitionRows in $Partitions) { 
+
+			for ($i = 0; $i -lt $($PartitionRows.Group.Count); $i++) {
+
+				$itemToDelete = $PartitionRows.Group[$i]
+				$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
+	
+				if([String]::IsNullOrEmpty($entityToDelete.ETag)) {
+					$entityToDelete.ETag = "*"
+				}
+				
+				$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
+				$entityToDelete.RowKey = $itemToDelete.RowKey
+				
+				$BatchOperation.Delete(($entityToDelete))
+	
+				if($i -eq ($BatchSize - 1) -or $i -eq ($PartitionRows.Group.Count -1)) {
+
+					Write-Verbose "Remove-AzTableRows: Removing Batch $($batch) with $($BatchOperation.Count) items..."
+					$results += $Table.ExecuteBatch($BatchOperation)
+					$batch++;
+
+					$BatchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+				}
+			}
+	
+			if($BatchOperation.Count -gt 0) {
+				Write-Verbose "Remove-AzTableRows: Removing Batch $($i) with $($BatchOperation.Count) items..."
+				$results += $Table.ExecuteBatch($BatchOperation)
+				$batch++;
+			}
+		}
+
+	}
+	
+	end
+	{
+		return ,$Results
+	}
+}
+
+
 # Aliases
 
 If (-not (Get-Alias -Name Add-StorageTableRow -ErrorAction SilentlyContinue))

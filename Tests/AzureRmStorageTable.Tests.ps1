@@ -291,6 +291,139 @@ Describe "AzureRmStorageTable" {
         }
     }
     
+    
+    Context "Remove-AzTableRows" {
+        BeforeAll {
+            $tableDelete = $tables | Where-Object -Property Name -eq "table$($uniqueString)delete"
+        }
+
+        It "Can delete a single entity" {
+            $entity = $null
+            $PK = [guid]::NewGuid().Guid
+            $RK = [guid]::NewGuid().GUid
+
+            Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
+
+            $entity = Get-AzTableRow -table $tableDelete
+            $entity | Should Not Be $null
+
+            $entities = [PSCustomObject]@{
+                PartitionKey = $PK
+                RowKey = $RK
+            }
+
+            Remove-AzTableRows -table $tableDelete -Entities $entities
+
+            $entity = Get-AzTableRow -table $tableDelete
+            $entity | Should Be $null
+        }
+
+        It "Can delete 101 entities" {
+            
+            $entities = @()
+            $PartitionKey = [guid]::NewGuid().Guid
+            for ($i = 0; $i -le 100; $i++) {
+                $PK = $PartitionKey
+                $RK = [guid]::NewGuid().GUid
+
+                Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
+
+                $entity = [PSCustomObject]@{
+                    PartitionKey = $PK
+                    RowKey = $RK
+                }
+
+                $entities += $entity
+            }
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Not Be $null
+            $tableRows.Count | Should Be 101
+
+            Remove-AzTableRows -table $tableDelete -Entities $entities
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Be $null
+        }
+
+        It "Can delete 10 entities with empty partition keys" {
+
+            $entities = @()
+            for ($i = 0; $i -lt 10; $i++) {
+                $PK = $null
+                $RK = [guid]::NewGuid().GUid
+
+                Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
+
+                $entity = [PSCustomObject]@{
+                    PartitionKey = $PK
+                    RowKey = $RK
+                }
+
+                $entities += $entity
+            }
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Not Be $null
+            $tableRows.Count | Should Be 10
+
+            Remove-AzTableRows -table $tableDelete -Entities $entities
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Be $null
+            $entity = $null
+           
+        }
+
+        It "Can delete 10 entities with empty row keys" {
+            $entities = @()
+            for ($i = 0; $i -lt 10; $i++) {
+                $PK = [guid]::NewGuid().GUid
+                $RK = $null
+
+                Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
+
+                $entity = [PSCustomObject]@{
+                    PartitionKey = $PK
+                    RowKey = $RK
+                }
+
+                $entities += $entity
+            }
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Not Be $null
+            $tableRows.Count | Should Be 10
+
+            Remove-AzTableRows -table $tableDelete -Entities $entities
+
+            $tableRows = Get-AzTableRow -table $tableDelete
+            $tableRows | Should Be $null
+            $entity = $null
+        }
+
+        It "Can delete entity with empty partition and row keys" {
+            $entity = $null
+            $PK = $null
+            $RK = $null
+
+            Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
+
+            $entity = Get-AzTableRow -table $tableDelete
+            $entity | Should Not Be $null
+
+            $entities = [PSCustomObject]@{
+                PartitionKey = $PK
+                RowKey = $RK
+            }
+
+            Remove-AzTableRows -table $tableDelete -Entities $entities
+
+            $entity = Get-AzTableRow -table $tableDelete
+            $entity | Should Be $null
+        }
+    }
+    
     Context "Update-AzTableRow" {
         BeforeAll {
             $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
