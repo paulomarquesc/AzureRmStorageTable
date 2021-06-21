@@ -42,6 +42,7 @@ FunctionsToExport = @(  'Add-AzTableRow',
                         'Get-AzTableRowByCustomFilter',
                         'Update-AzTableRow',
                         'Remove-AzTableRow',
+                        'Remove-AzTableRows',
                         'Get-AzTableTable'
                         )
 

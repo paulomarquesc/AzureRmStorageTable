@@ -41,7 +41,8 @@
                             'Get-AzTableRowByColumnName',
                             'Get-AzTableRowByCustomFilter',
                             'Update-AzTableRow',
-                            'Remove-AzTableRow',
+                            'Remove-AzTableRow', 
+                            'Remove-AzTableRows',
                             'Get-AzTableTable'
                             )
     
