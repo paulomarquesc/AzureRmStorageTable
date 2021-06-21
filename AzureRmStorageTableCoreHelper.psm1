@@ -897,8 +897,10 @@ function Remove-AzTableRows
 
 		foreach($PartitionRows in $Partitions) { 
 
+			$batchCounter = 0
 			for ($i = 0; $i -lt $($PartitionRows.Group.Count); $i++) {
 
+				$batchCounter++
 				$itemToDelete = $PartitionRows.Group[$i]
 				$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
 	
@@ -911,11 +913,13 @@ function Remove-AzTableRows
 				
 				$BatchOperation.Delete(($entityToDelete))
 	
-				if($i -eq ($BatchSize - 1) -or $i -eq ($PartitionRows.Group.Count -1)) {
+				if($batchCounter -eq ($BatchSize) -or $i -eq ($PartitionRows.Group.Count -1)) {
 
 					Write-Verbose "Remove-AzTableRows: Removing Batch $($batch) with $($BatchOperation.Count) items..."
 					$results += $Table.ExecuteBatch($BatchOperation)
-					$batch++;
+					
+					$batchCounter = 0
+					$batch++
 
 					$BatchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
 				}
