@@ -42,7 +42,9 @@ FunctionsToExport = @(  'Add-AzTableRow',
                         'Get-AzTableRowByCustomFilter',
                         'Update-AzTableRow',
                         'Remove-AzTableRow',
-                        'Get-AzTableTable'
+                        'Get-AzTableTable',
+                        'New-AzTableBatch',
+                        'Save-AzTableBatch'
                         )
 
 VariablesToExport = ''
