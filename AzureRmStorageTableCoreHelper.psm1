@@ -847,58 +847,14 @@ function Remove-AzTableRow
 }
 
 # Aliases
-
-If (-not (Get-Alias | Where-Object Name -eq " Add-StorageTableRow" ))
-{
-	New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Add-AzureStorageTableRow" ))
-{
-	New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableTable" ))
-{
-	New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRowAll" ))
-{
-	New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRowByPartitionKey" ))
-{
-	New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRowByPartitionKeyRowKey" ))
-{
-	New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRowByColumnName" ))
-{
-	New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRowByCustomFilter" ))
-{
-	New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Get-AzureStorageTableRow" ))
-{
-	New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Update-AzureStorageTableRow" ))
-{
-	New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow
-}
-
-If (-not (Get-Alias | Where-Object Name -eq " Remove-AzureStorageTableRow" ))
-{
-	New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow
-}
+New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow -ErrorAction SilentlyContinue
