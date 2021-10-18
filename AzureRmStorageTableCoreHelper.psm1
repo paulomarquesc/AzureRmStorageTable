@@ -5,7 +5,7 @@
 .DESCRIPTION
   	AzureRmStorageTableCoreHelper.psm1 - PowerShell Module that contains all functions related to manipulating Azure Storage Table rows/entities.
 .NOTES
-	This module depends on Az.Accounts, Az.Resources and Az.Storage PowerShell modules	
+	This module depends on Az.Accounts, Az.Resources and Az.Storage PowerShell modules
 #>
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
@@ -27,7 +27,7 @@ function TestAzTableEmptyKeys
 		$RowKey
 	)
 
-    $CosmosEmptyKeysErrorMessage = "Cosmos DB table API does not accept empty partition or row keys when using CloudTable.Execute operation, because of this we are disabling this capability in this module and it will not proceed." 
+    $CosmosEmptyKeysErrorMessage = "Cosmos DB table API does not accept empty partition or row keys when using CloudTable.Execute operation, because of this we are disabling this capability in this module and it will not proceed."
 
     if ([string]::IsNullOrEmpty($PartitionKey) -or [string]::IsNullOrEmpty($RowKey))
     {
@@ -44,7 +44,7 @@ function ExecuteQueryAsync
 		[Parameter(Mandatory=$true)]
 		$TableQuery
 	)
-	# Internal function 
+	# Internal function
 	# Executes query in async mode
 
 	if ($TableQuery -ne $null)
@@ -74,7 +74,7 @@ function ExecuteQueryAsync
 				}
 			}
 		} while ($token)
-	
+
 		return $AllRows
 	}
 }
@@ -133,22 +133,22 @@ function Get-AzTableTable
 	(
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
 		[string]$resourceGroup,
-		
+
 		[Parameter(Mandatory=$true)]
         [String]$TableName,
 
 		[Parameter(ParameterSetName="AzTableStorage",Mandatory=$true)]
 		[String]$storageAccountName,
-		
+
 		[Parameter(ParameterSetName="AzStorageEmulator",Mandatory=$true)]
         [switch]$UseStorageEmulator
 	)
-	
+
 	# Validating name
 	if ($TableName.Contains("_") -or $TableName.Contains("-"))
 	{
 		throw "Invalid table name: $TableName"
-	} 
+	}
 
 	$nullTableErrorMessage = [string]::Empty
 
@@ -174,7 +174,7 @@ function Get-AzTableTable
 		}
 		else
 		{
-			throw "An error ocurred while obtaining keys from $storageAccountName."    
+			throw "An error ocurred while obtaining keys from $storageAccountName."
 		}
 
 		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
@@ -231,7 +231,7 @@ function Add-AzTableRow
 	(
 		[Parameter(Mandatory=$true)]
 		$Table,
-		
+
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
         [String]$PartitionKey,
@@ -244,10 +244,10 @@ function Add-AzTableRow
         [hashtable]$property,
 		[Switch]$UpdateExisting
 	)
-	
+
 	# Creates the table entity with mandatory PartitionKey and RowKey arguments
 	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
-    
+
     # Adding the additional columns to the table entity
 	foreach ($prop in $property.Keys)
 	{
@@ -333,7 +333,7 @@ function Get-AzTableRowByPartitionKey
 		[Parameter(Mandatory=$false)]
 		[Nullable[Int32]]$Top = $null
 	)
-	
+
 	Write-Verbose $DeprecatedMessage -Verbose
 
 	# Filtering by Partition Key
@@ -362,7 +362,7 @@ function Get-AzTableRowByPartitionKeyRowKey
 		Return only the first n rows from the query
 	.EXAMPLE
 		# Getting rows by Partition Key and Row Key
-		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345"	
+		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345"
 	.EXAMPLE
 		# Getting rows by Partition Key and Row Key, with a maximum number returned
 		Get-AzStorageTableRowByPartitionKeyRowKey -Table $Table -PartitionKey "partition1" -RowKey "id12345" -Top 10
@@ -384,7 +384,7 @@ function Get-AzTableRowByPartitionKeyRowKey
 		[Parameter(Mandatory=$false)]
 		[Nullable[Int32]]$Top = $null
 	)
-	
+
 	# Filtering by Partition Key and Row Key
 
 	Write-Verbose $DeprecatedMessage -Verbose
@@ -452,7 +452,7 @@ function Get-AzTableRowByColumnName
 	# Filtering by Columnn Name
 
 	if ($PSCmdlet.ParameterSetName -eq "byString")
-	{			
+	{
 		Get-AzTableRow -Table $Table -ColumnName $ColumnName -value $Value -Operator $Operator -Top $Top
 	}
 	else
@@ -503,7 +503,7 @@ function Get-AzTableRowByCustomFilter
 		[Parameter(Mandatory=$false)]
 		[Nullable[Int32]]$Top = $null
 	)
-	
+
 	Write-Verbose $DeprecatedMessage -Verbose
 
 	# Custom Filter
@@ -612,7 +612,7 @@ function Get-AzTableRow
 		[Parameter(ParameterSetName="byColummnGuid")]
 		[validateSet("Equal","GreaterThan","GreaterThanOrEqual","LessThan" ,"LessThanOrEqual" ,"NotEqual")]
 		[string]$Operator,
-		
+
 		[Parameter(Mandatory=$true, ParameterSetName="byCustomFilter")]
 		[string]$CustomFilter,
 
@@ -657,9 +657,9 @@ function Get-AzTableRow
 	}
 	else
 	{
-		[string]$filter = $null	
+		[string]$filter = $null
 	}
-	
+
 	# Adding filter if not null
 	if (-not [string]::IsNullOrEmpty($Filter))
 	{
@@ -701,7 +701,7 @@ function Update-AzTableRow
 	.DESCRIPTION
 		Updates a table entity. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
 		and store in an object, change the necessary properties and then perform the update passing this modified entity back, through Pipeline or as argument.
-		Notice that this cmdlet accepts only one entity per execution. 
+		Notice that this cmdlet accepts only one entity per execution.
 		This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required
 		please delete the old entity and add the new one with the updated values instead.
 	.PARAMETER Table
@@ -725,7 +725,7 @@ function Update-AzTableRow
 		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
 		$entity
 	)
-    
+
     # Only one entity at a time can be updated
     $updatedEntityList = @()
     $updatedEntityList += $entity
@@ -736,8 +736,8 @@ function Update-AzTableRow
     }
 
 	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $entity.PartitionKey, $entity.RowKey
-	
-	# Iterating over PS Object properties to add to the updated entity 
+
+	# Iterating over PS Object properties to add to the updated entity
 	foreach ($prop in $entity.psobject.Properties)
 	{
 		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp"))
@@ -769,7 +769,7 @@ function Remove-AzTableRow
 	.PARAMETER PartitionKey (ParameterSetName=byPartitionandRowKeys)
 		Partition key where the entity belongs to.
 	.PARAMETER RowKey (ParameterSetName=byPartitionandRowKeys)
-		Row key that uniquely identifies the entity within the partition.		 
+		Row key that uniquely identifies the entity within the partition.
 	.EXAMPLE
 		# Deleting an entry by entity PS Object
 		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
@@ -811,10 +811,10 @@ function Remove-AzTableRow
 		{
 			throw "Delete operation cannot happen on an array of entities, altough you can pipe multiple items."
 		}
-		
+
 		$Results = @()
 	}
-	
+
 	process
 	{
 		if ($PSCmdlet.ParameterSetName -eq "byEntityPSObjectObject")
@@ -839,7 +839,7 @@ function Remove-AzTableRow
 			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
 		}
 	}
-	
+
 	end
 	{
 		return ,$Results
@@ -847,58 +847,14 @@ function Remove-AzTableRow
 }
 
 # Aliases
-
-If (-not (Get-Alias -Name Add-StorageTableRow -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow
-}
-
-If (-not (Get-Alias -Name Add-AzureStorageTableRow -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableTable -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRowAll -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRowByPartitionKey -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRowByColumnName -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRowByCustomFilter -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter
-}
-
-If (-not (Get-Alias -Name Get-AzureStorageTableRow -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow
-}
-
-If (-not (Get-Alias -Name Update-AzureStorageTableRow -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow
-}
-
-If (-not (Get-Alias -Name Remove-AzureStorageTableRow -ErrorAction SilentlyContinue))
-{
-	New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow
-}
+New-Alias -Name Add-StorageTableRow -Value Add-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Add-AzureStorageTableRow -Value Add-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableTable -Value Get-AzTableTable -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowAll -Value Get-AzTableRowAll -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByPartitionKey -Value Get-AzTableRowByPartitionKey -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByPartitionKeyRowKey -Value Get-AzTableRowByPartitionKeyRowKey -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByColumnName -Value Get-AzTableRowByColumnName -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRowByCustomFilter -Value Get-AzTableRowByCustomFilter -ErrorAction SilentlyContinue
+New-Alias -Name Get-AzureStorageTableRow -Value Get-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Update-AzureStorageTableRow -Value Update-AzTableRow -ErrorAction SilentlyContinue
+New-Alias -Name Remove-AzureStorageTableRow -Value Remove-AzTableRow -ErrorAction SilentlyContinue
