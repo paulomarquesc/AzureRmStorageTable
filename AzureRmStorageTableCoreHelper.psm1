@@ -115,13 +115,34 @@ function New-AzTableBatch
     .EXAMPLE
         # Create batch
         $Batch = New-AzTableBatch
+	.EXAMPLE
+		# Create and populate batch operation
+		$entity1 = @{Partition="Partition1"; RowKey="1"; ExampleProperty="myprop"}
+		$entity2 = @{Partition="Partition1"; RowKey="2"; ExampleProperty="myprop2"}
+		$operation1 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity1)
+		$operation2 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity2)
+		$Batch = New-AzTableBatch -Operations @($operation1, $operation2)
     #>
-    param()
+	[CmdletBinding()]
+    param
+	(
+		[Parameter(Mandatory=$false)]
+		[AllowEmptyCollection()]
+		[Microsoft.Azure.Cosmos.Table.TableOperation[]]
+		$Operations
+	)
 
-    return New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+	$batchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation" 
+
+	foreach ($operation in $Operations)
+	{
+		$batchOperation.Add($operation)
+	}
+
+    return $batchOperation
 }
 
-function Save-AzTableBatch
+function Invoke-AzTableBatch
 {
     <#
     .SYNOPSIS
@@ -314,11 +335,11 @@ function Add-AzTableRowBatch
 {
 	<#
 	.SYNOPSIS
-		Adds a row/entity to a specified table
+		Adds rows to a specified table
 	.DESCRIPTION
-		Adds a row/entity to a specified table
+		Adds rows to a specified table
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entities will be added
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER RowKey
@@ -328,7 +349,7 @@ function Add-AzTableRowBatch
 	.PARAMETER UpdateExisting
 		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
 	.EXAMPLE
-		# Adding a row
+		# Adding rows
 		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
 	#>
 	[CmdletBinding()]
