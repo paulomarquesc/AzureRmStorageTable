@@ -107,6 +107,44 @@ function GetPSObjectFromEntity($entityList)
 
 }
 
+function New-AzTableBatch
+{
+    <#
+    .SYNOPSIS
+        Creates a new batch operation object.
+    .EXAMPLE
+        # Create batch
+        $Batch = New-AzTableBatch
+    #>
+    param()
+
+    return New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+}
+
+function Save-AzTableBatch
+{
+    <#
+    .SYNOPSIS
+        Execute a batch operation against the specified table.
+    .PARAMETER Table
+        Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to execute the batch upon.
+    .PARAMETER Batch
+        Cosmos Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation that has the entity operations to perform on the table.
+    .EXAMPLE
+        # Execute a batch operation
+        Save-AzTableBatch -Table $Table -Batch $Batch
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [Microsoft.Azure.Cosmos.Table.CloudTable]$Table,
+
+        [Parameter(Mandatory=$true)]
+        [Microsoft.Azure.Cosmos.Table.TableBatchOperation]$Batch
+    )
+
+    return $Table.ExecuteBatch($Batch)
+}
 
 function Get-AzTableTable
 {
@@ -214,6 +252,8 @@ function Add-AzTableRow
 		Adds a row/entity to a specified table
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER RowKey
@@ -229,8 +269,11 @@ function Add-AzTableRow
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="Table", Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
@@ -321,11 +364,25 @@ function Add-AzTableRowBatch
 
     if ($UpdateExisting)
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.InsertOrReplace($entity)
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		}
 	}
 	else
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.Insert($entity)
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		}
 	}
 }
 
