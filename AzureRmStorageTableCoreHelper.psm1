@@ -342,10 +342,8 @@ function Add-AzTableRowBatch
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entities will be added
 	.PARAMETER PartitionKey
 		Identifies the table partition
-	.PARAMETER RowKey
-		Identifies a row within a partition
-	.PARAMETER Property
-		Hashtable with the columns that will be part of the entity. e.g. @{"firstName"="Paulo";"lastName"="Marques"}
+	.PARAMETER Entities
+		Hashtable array with the entities that will be 
 	.PARAMETER UpdateExisting
 		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
 	.EXAMPLE
