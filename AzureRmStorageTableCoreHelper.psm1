@@ -267,6 +267,68 @@ function Add-AzTableRow
 	}
 }
 
+function Add-AzTableRowBatch
+{
+	<#
+	.SYNOPSIS
+		Adds a row/entity to a specified table
+	.DESCRIPTION
+		Adds a row/entity to a specified table
+	.PARAMETER Table
+		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+	.PARAMETER PartitionKey
+		Identifies the table partition
+	.PARAMETER RowKey
+		Identifies a row within a partition
+	.PARAMETER Property
+		Hashtable with the columns that will be part of the entity. e.g. @{"firstName"="Paulo";"lastName"="Marques"}
+	.PARAMETER UpdateExisting
+		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
+	.EXAMPLE
+		# Adding a row
+		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+	#>
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory=$true)]
+		$Table,
+
+		[Parameter(Mandatory=$true)]
+		[AllowEmptyString()]
+        [String]$PartitionKey,
+
+		[Parameter(Mandatory=$true)]
+		[AllowEmptyString()]
+        [String]$RowKey,
+
+		[Parameter(Mandatory=$false)]
+        [hashtable]$property,
+		[Switch]$UpdateExisting
+	)
+
+	# Creates the table entity with mandatory PartitionKey and RowKey arguments
+	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
+
+    # Adding the additional columns to the table entity
+	foreach ($prop in $property.Keys)
+	{
+		if ($prop -ne "TableTimestamp")
+		{
+			$entity.Properties.Add($prop, $property.Item($prop))
+		}
+	}
+
+    if ($UpdateExisting)
+	{
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+	}
+	else
+	{
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+	}
+}
+
 function Get-AzTableRowAll
 {
 	<#
