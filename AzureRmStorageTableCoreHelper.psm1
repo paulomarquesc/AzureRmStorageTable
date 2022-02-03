@@ -153,7 +153,7 @@ function Invoke-AzTableBatch
         Cosmos Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation that has the entity operations to perform on the table.
     .EXAMPLE
         # Execute a batch operation
-        Save-AzTableBatch -Table $Table -Batch $Batch
+        Invoke-AzTableBatch -Table $Table -Batch $Batch
     #>
     [CmdletBinding()]
     param(
@@ -285,7 +285,13 @@ function Add-AzTableRow
 		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
 	.EXAMPLE
 		# Adding a row
-		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+	.EXAMPLE
+		# Adding a row with a batch operation
+		$batch = New-AzTableBatch
+		$entity = @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+		Add-AzTableRow -Batch $batch -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property $entity
+		Invoke-AzTableBatch -Table $Table -Batch $batch
 	#>
 	[CmdletBinding()]
 	param
@@ -295,80 +301,6 @@ function Add-AzTableRow
 		
 		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
 		$Batch,
-
-		[Parameter(Mandatory=$true)]
-		[AllowEmptyString()]
-        [String]$PartitionKey,
-
-		[Parameter(Mandatory=$true)]
-		[AllowEmptyString()]
-        [String]$RowKey,
-
-		[Parameter(Mandatory=$false)]
-        [hashtable]$property,
-		[Switch]$UpdateExisting
-	)
-
-	# Creates the table entity with mandatory PartitionKey and RowKey arguments
-	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
-
-    # Adding the additional columns to the table entity
-	foreach ($prop in $property.Keys)
-	{
-		if ($prop -ne "TableTimestamp")
-		{
-			$entity.Properties.Add($prop, $property.Item($prop))
-		}
-	}
-
-    if ($UpdateExisting)
-	{
-		if ($PSCmdlet.ParameterSetName -eq "Batch")
-		{
-			$Batch.InsertOrReplace($entity)
-		}
-		else
-		{
-			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
-		}
-	}
-	else
-	{
-		if ($PSCmdlet.ParameterSetName -eq "Batch")
-		{
-			$Batch.Insert($entity)
-		}
-		else
-		{
-			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
-		}
-	}
-}
-
-function Add-AzTableRowBatch
-{
-	<#
-	.SYNOPSIS
-		Adds rows to a specified table
-	.DESCRIPTION
-		Adds rows to a specified table
-	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entities will be added
-	.PARAMETER PartitionKey
-		Identifies the table partition
-	.PARAMETER Entities
-		Hashtable array with the entities that will be 
-	.PARAMETER UpdateExisting
-		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
-	.EXAMPLE
-		# Adding rows
-		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
-	#>
-	[CmdletBinding()]
-	param
-	(
-		[Parameter(Mandatory=$true)]
-		$Table,
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
@@ -858,6 +790,8 @@ function Update-AzTableRow
 		please delete the old entity and add the new one with the updated values instead.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER Entity
 		The entity/row with new values to perform the update.
 	.EXAMPLE
@@ -867,6 +801,15 @@ function Update-AzTableRow
 		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 		$person.lastName = "New Last Name"
 		$person | Update-AzTableRow -Table $Table
+	.EXAMPLE
+		# Updating an entity with a batch operation
+
+		$batch = New-AzTableBatch
+		[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"User1")
+		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
+		$person.lastName = "New Last Name"
+		$person | Update-AzTableRow -Batch $batch
+		Invoke-AzTableBatch -Table $table -Batch $batch
 	#>
 	[CmdletBinding()]
 	param
@@ -927,6 +870,8 @@ function Remove-AzTableRow
 		available cmdlets. It also can delete a row/entity using Partition and Row Key properties directly.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER Entity (ParameterSetName=byEntityPSObjectObject)
 		The entity/row with new values to perform the deletion.
 	.PARAMETER PartitionKey (ParameterSetName=byPartitionandRowKeys)
@@ -940,6 +885,15 @@ function Remove-AzTableRow
 		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
 		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
 		$personToDelete | Remove-AzTableRow -Table $Table
+	.EXAMPLE
+		# Deleting an entry with a batch operation
+		$batch = New-AzTableBatch
+		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
+		[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
+		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
+		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		$personToDelete | Remove-AzTableRow -Batch $batch
+		Invoke-AzTableBatch -Table $Table -Batch $batch
 	.EXAMPLE
 		# Deleting an entry by using PartitionKey and row key directly
 		Remove-AzTableRow -Table $Table -PartitionKey "TableEntityDemoFullList" -RowKey "399b58af-4f26-48b4-9b40-e28a8b03e867"
