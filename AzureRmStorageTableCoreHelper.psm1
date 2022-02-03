@@ -323,11 +323,25 @@ function Add-AzTableRow
 
     if ($UpdateExisting)
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.InsertOrReplace($entity)
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		}
 	}
 	else
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.Insert($entity)
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		}
 	}
 }
 
@@ -857,8 +871,11 @@ function Update-AzTableRow
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="Table", Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
 		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
 		$entity
@@ -887,9 +904,17 @@ function Update-AzTableRow
 	$updatedEntity.ETag = $entity.Etag
 	$updatedEntity.Timestamp = $entity.TableTimestamp
 
-    # Updating the dynamic table entity to the table
-    # return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
-	return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	
+	if ($PSCmdlet.ParameterSetName -eq "Batch")
+	{
+		$Batch.InsertOrMerge($entity)
+	}
+	else
+	{
+		# Updating the dynamic table entity to the table
+    	# return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	}
 }
 
 function Remove-AzTableRow
@@ -925,17 +950,22 @@ function Remove-AzTableRow
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true)]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
-		[Parameter(Mandatory=$true,ValueFromPipeline=$true,ParameterSetName="byEntityPSObjectObject")]
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true,ValueFromPipeline=$true)]
 		$entity,
 
-		[Parameter(Mandatory=$true,ParameterSetName="byPartitionandRowKeys")]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		[AllowEmptyString()]
 		[string]$PartitionKey,
 
-		[Parameter(Mandatory=$true,ParameterSetName="byPartitionandRowKeys")]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		[AllowEmptyString()]
 		[string]$RowKey
 	)
