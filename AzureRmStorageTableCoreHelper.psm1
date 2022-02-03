@@ -985,7 +985,7 @@ function Remove-AzTableRow
 
 	process
 	{
-		if ($PSCmdlet.ParameterSetName -eq "byEntityPSObjectObject")
+		if ($PSCmdlet.ParameterSetName -ne "byPartitionandRowKeys")
 		{
 			$PartitionKey = $entity.PartitionKey
 			$RowKey = $entity.RowKey
@@ -1004,13 +1004,23 @@ function Remove-AzTableRow
 			$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
 			$entityToDelete.RowKey = $itemToDelete.RowKey
 
-			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
+			if ($PSCmdlet.ParameterSetName -eq "Batch")
+			{
+				$Batch.Delete($entityToDelete)
+			}
+			else
+			{
+				$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))	
+			}
 		}
 	}
 
 	end
 	{
-		return ,$Results
+		if ($PSCmdlet.ParameterSetName -ne "Batch")
+		{
+			return ,$Results
+		}
 	}
 }
 
