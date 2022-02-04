@@ -268,9 +268,9 @@ function Add-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Adds a row/entity to a specified table
+		Adds a row/entity to a specified table or batch operation
 	.DESCRIPTION
-		Adds a row/entity to a specified table
+		Adds a row/entity to a specified table or batch operation
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
 	.PARAMETER Batch
@@ -311,7 +311,7 @@ function Add-AzTableRow
         [String]$RowKey,
 
 		[Parameter(Mandatory=$false)]
-        [hashtable]$property,
+        [hashtable]$Property,
 		[Switch]$UpdateExisting
 	)
 
@@ -319,11 +319,11 @@ function Add-AzTableRow
 	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
 
     # Adding the additional columns to the table entity
-	foreach ($prop in $property.Keys)
+	foreach ($prop in $Property.Keys)
 	{
 		if ($prop -ne "TableTimestamp")
 		{
-			$entity.Properties.Add($prop, $property.Item($prop))
+			$entity.Properties.Add($prop, $Property.Item($prop))
 		}
 	}
 
@@ -781,9 +781,9 @@ function Update-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Updates a table entity
+		Updates a table entity or batch operation
 	.DESCRIPTION
-		Updates a table entity. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
+		Updates a table entity or batch operation. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
 		and store in an object, change the necessary properties and then perform the update passing this modified entity back, through Pipeline or as argument.
 		Notice that this cmdlet accepts only one entity per execution.
 		This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required
@@ -821,22 +821,22 @@ function Update-AzTableRow
 		$Batch,
 
 		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-		$entity
+		$Entity
 	)
 
     # Only one entity at a time can be updated
     $updatedEntityList = @()
-    $updatedEntityList += $entity
+    $updatedEntityList += $Entity
 
     if ($updatedEntityList.Count -gt 1)
     {
         throw "Update operation can happen on only one entity at a time, not in a list/array of entities."
     }
 
-	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $entity.PartitionKey, $entity.RowKey
+	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $Entity.PartitionKey, $Entity.RowKey
 
 	# Iterating over PS Object properties to add to the updated entity
-	foreach ($prop in $entity.psobject.Properties)
+	foreach ($prop in $Entity.psobject.Properties)
 	{
 		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp"))
 		{
@@ -844,13 +844,13 @@ function Update-AzTableRow
 		}
 	}
 
-	$updatedEntity.ETag = $entity.Etag
-	$updatedEntity.Timestamp = $entity.TableTimestamp
+	$updatedEntity.ETag = $Entity.Etag
+	$updatedEntity.Timestamp = $Entity.TableTimestamp
 
 	
 	if ($PSCmdlet.ParameterSetName -eq "Batch")
 	{
-		$Batch.InsertOrMerge($entity)
+		$Batch.InsertOrMerge($updatedEntity)
 	}
 	else
 	{
@@ -913,7 +913,7 @@ function Remove-AzTableRow
 
 		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
 		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true,ValueFromPipeline=$true)]
-		$entity,
+		$Entity,
 
 		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		[AllowEmptyString()]
@@ -927,7 +927,7 @@ function Remove-AzTableRow
 	begin
 	{
 		$updatedEntityList = @()
-		$updatedEntityList += $entity
+		$updatedEntityList += $Entity
 
 		if ($updatedEntityList.Count -gt 1)
 		{
@@ -941,8 +941,8 @@ function Remove-AzTableRow
 	{
 		if ($PSCmdlet.ParameterSetName -ne "byPartitionandRowKeys")
 		{
-			$PartitionKey = $entity.PartitionKey
-			$RowKey = $entity.RowKey
+			$PartitionKey = $Entity.PartitionKey
+			$RowKey = $Entity.RowKey
 		}
 
 		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"

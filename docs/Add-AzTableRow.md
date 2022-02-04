@@ -8,24 +8,40 @@ schema: 2.0.0
 # Add-AzTableRow
 
 ## SYNOPSIS
-Adds a row/entity to a specified table
+Adds a row/entity to a specified table or batch operation
 
 ## SYNTAX
 
+### Table
 ```powershell
-Add-AzTableRow [-Table] <Object> [-PartitionKey] <String> [-RowKey] <String> [[-property] <Hashtable>]
+Add-AzTableRow -Table <Object> -PartitionKey <String> -RowKey <String> [-Property <Hashtable>]
+ [-UpdateExisting] [<CommonParameters>]
+```
+
+### Batch
+```powershell
+Add-AzTableRow -Batch <Object> -PartitionKey <String> -RowKey <String> [-Property <Hashtable>]
  [-UpdateExisting] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Adds a row/entity to a specified table
+Adds a row/entity to a specified table or batch operation
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
 # Adding a row
-Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+```
+
+### EXAMPLE 2
+```powershell
+# Adding a row with a batch operation
+$batch = New-AzTableBatch
+$entity = @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+Add-AzTableRow -Batch $batch -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property $entity
+Invoke-AzTableBatch -Table $Table -Batch $batch
 ```
 
 ## PARAMETERS
@@ -35,7 +51,22 @@ Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity wi
 
 ```yaml
 Type: Object
-Parameter Sets: (All)
+Parameter Sets: Table
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Batch
+Table batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation where the entity will be added
+
+```yaml
+Type: Object
+Parameter Sets: Batch
 Aliases:
 
 Required: True
@@ -75,7 +106,7 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -property
+### -Property
 Hashtable with the columns that will be part of the entity. E.g. `@{"firstName"="Paulo";"lastName"="Marques"}`
 
 ```yaml
