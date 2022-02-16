@@ -153,7 +153,16 @@ Describe "AzureRmStorageTable" {
         }
 
         It "Can add multiple entities with a batch operation" {
+            $batch = New-AzTableBatch
+            $PK = [guid]::NewGuid().Guid
 
+            $property1Content = "COMP01"
+            $property2Content = "Linux"
+
+            Add-AzTableRow -Batch $batch -RowKey ([guid]::NewGuid().tostring()) -PartitionKey $PK -Property @{ "computerName" = $property1Content; "osVersion" = $property2Content }
+            Add-AzTableRow -Batch $batch -RowKey ([guid]::NewGuid().tostring()) -PartitionKey $PK -Property @{ "computerName" = $property1Content; "osVersion" = $property2Content }
+
+            $batch.Count | Should -Be 2
         }
     }
 
