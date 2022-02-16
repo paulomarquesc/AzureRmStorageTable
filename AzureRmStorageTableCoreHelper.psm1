@@ -117,11 +117,13 @@ function New-AzTableBatch
         $Batch = New-AzTableBatch
 	.EXAMPLE
 		# Create and populate batch operation
-		$entity1 = @{Partition="Partition1"; RowKey="1"; ExampleProperty="myprop"}
-		$entity2 = @{Partition="Partition1"; RowKey="2"; ExampleProperty="myprop2"}
+		$entity1 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "1"
+		$entity1.Properties.Add("ExampleProperty", "myProp")
+		$entity2 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "2"
+		$entity2.Properties.Add("ExampleProperty", "myProp2")
 		$operation1 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity1)
 		$operation2 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity2)
-		$Batch = New-AzTableBatch -Operations @($operation1, $operation2)
+		$batch = New-AzTableBatch -Operations @($operation1, $operation2)
     #>
 	[CmdletBinding()]
     param

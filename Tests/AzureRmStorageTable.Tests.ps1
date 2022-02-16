@@ -14,9 +14,6 @@ Import-Module .\AzTable.psd1 -Force
 $uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
 $resourceGroup = "$uniqueString-rg"
 
-$GetAzTableTableCmdtTableName = "TestTable"
-Write-Host $GetAzTableTableCmdtTableName
-
 Describe "AzureRmStorageTable" {
     BeforeAll {
         $GetAzTableTableCmdtTableName = "TestTable"
@@ -54,7 +51,6 @@ Describe "AzureRmStorageTable" {
         $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
 
         It "Can create a new table" {
-            Write-Host "Get-AzTableTable -TableName $GetAzTableTableCmdtTableName $GetTableCommand"
             $Table = Invoke-Expression("Get-AzTableTable -TableName `$GetAzTableTableCmdtTableName $GetTableCommand") 
             $Table | Should -Not -Be $null
         }
@@ -62,6 +58,25 @@ Describe "AzureRmStorageTable" {
         It "Can open an existing table" {
             $Table = Invoke-Expression("Get-AzTableTable -TableName `$GetAzTableTableCmdtTableName $GetTableCommand") 
             $Table | Should -Not -Be $null
+        }
+    }
+
+    Context "New-AzTableBatch" {
+        It "Can create an empty batch operation" {
+            $batch = New-AzTableBatch
+            $batch.Count | Should -Be 0
+        }
+
+        It "Can create a pre populated batch operation" {
+            $entity1 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "1"
+            $entity1.Properties.Add("ExampleProperty", "myProp")
+            $entity2 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "2"
+            $entity2.Properties.Add("ExampleProperty", "myProp2")
+            $operation1 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity1)
+            $operation2 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity2)
+            $batch = New-AzTableBatch -Operations @($operation1, $operation2)
+
+            $batch.Count | Should -Be 2
         }
     }
 
@@ -135,6 +150,10 @@ Describe "AzureRmStorageTable" {
 
             $entity.computerName | Should -Be $expectedProperty1Content
             $entity.osVersion | Should -Be $expectedProperty2Content
+        }
+
+        It "Can add multiple entities with a batch operation" {
+
         }
     }
 
