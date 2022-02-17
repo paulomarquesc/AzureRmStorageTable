@@ -134,6 +134,11 @@ function New-AzTableBatch
 		$Operations
 	)
 
+	if ($null -eq $Operations) {
+		# Will return null without this line
+		return New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+	}
+
 	$batchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation" 
 
 	foreach ($operation in $Operations)
