@@ -16,6 +16,10 @@ Updates a table entity or batch operation
 Update-AzTableRow -Table <Object> -Entity <Object> [<CommonParameters>]
 ```
 
+```powershell
+Update-AzTableRow -Batch <Object> -Entity <Object> [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Updates a table entity or batch operation.
 To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available and store in an object, change the necessary properties and then perform the update passing this modified entity back, through Pipeline or as argument. Notice that this cmdlet accepts only one entity per execution. This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required please delete the old entity and add the new one with the updated values instead.
