@@ -14,6 +14,41 @@
 # Deprecated Message
 $DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed in the next release, please use Get-AzTableRow instead."
 
+# Module Class
+
+class AzTableBatchOperation
+{
+	[hashtable]$BatchOperationMap
+	[int]$Count
+
+	AzTableBatchOperation() {
+		$this.BatchOperationMap = @{}
+		$this.Count = 0
+	}
+
+	Add(
+		[Microsoft.Azure.Cosmos.Table.TableOperation] $operation
+	) {
+		$partition = $operation.Entity.PartitionKey
+		$thisBatch = $this.BatchOperationMap[$partition]
+		if ($null -eq $thisBatch) {
+			$newBatch = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+			$newBatch.Add($operation)
+			$this.BatchOperationMap[$partition] = $newBatch
+		} else {
+			$thisBatch.Add($operation)
+		}
+
+		$this.Count++
+	}
+
+	[Microsoft.Azure.Cosmos.Table.TableBatchOperation] GetBatchOperation(
+		[string] $partition
+	) {
+		return $this.BatchOperationMap[$partition]
+	}
+}
+
 # Module Functions
 
 function TestAzTableEmptyKeys
@@ -107,6 +142,74 @@ function GetPSObjectFromEntity($entityList)
 
 }
 
+function New-AzTableBatch
+{
+    <#
+    .SYNOPSIS
+        Creates a new batch operation object.
+    .EXAMPLE
+        # Create batch
+        $Batch = New-AzTableBatch
+	.EXAMPLE
+		# Create and populate batch operation
+		$entity1 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "1"
+		$entity1.Properties.Add("ExampleProperty", "myProp")
+		$entity2 = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList "Partition1", "2"
+		$entity2.Properties.Add("ExampleProperty", "myProp2")
+		$operation1 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity1)
+		$operation2 = [Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity2)
+		$batch = New-AzTableBatch -Operations @($operation1, $operation2)
+    #>
+	[CmdletBinding()]
+    param
+	(
+		[Parameter(Mandatory=$false)]
+		[AllowEmptyCollection()]
+		[Microsoft.Azure.Cosmos.Table.TableOperation[]]
+		$Operations
+	)
+
+	if ($null -eq $Operations) {
+		# Will return null without this line
+		return [AzTableBatchOperation]::new()
+	}
+
+	$batchOperation = [AzTableBatchOperation]::new()
+
+	foreach ($operation in $Operations)
+	{
+		$batchOperation.Add($operation)
+	}
+
+    return $batchOperation
+}
+
+function Invoke-AzTableBatch
+{
+    <#
+    .SYNOPSIS
+        Execute a batch operation against the specified table.
+    .PARAMETER Table
+        Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to execute the batch upon.
+    .PARAMETER Batch
+        Cosmos Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation that has the entity operations to perform on the table.
+    .EXAMPLE
+        # Execute a batch operation
+        Invoke-AzTableBatch -Table $Table -Batch $Batch
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [Microsoft.Azure.Cosmos.Table.CloudTable]$Table,
+
+        [Parameter(Mandatory=$true)]
+        [AzTableBatchOperation]$Batch
+    )
+
+	foreach ($partition in $Batch.BatchOperationMap.Keys) {
+		$Table.ExecuteBatch($Batch.BatchOperationMap[$partition])
+	}
+}
 
 function Get-AzTableTable
 {
@@ -209,11 +312,13 @@ function Add-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Adds a row/entity to a specified table
+		Adds a row/entity to a specified table or batch operation
 	.DESCRIPTION
-		Adds a row/entity to a specified table
+		Adds a row/entity to a specified table or batch operation
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER RowKey
@@ -224,13 +329,22 @@ function Add-AzTableRow
 		Signalizes that command should update existing row, if such found by PartitionKey and RowKey. If not found, new row is added.
 	.EXAMPLE
 		# Adding a row
-		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+		Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+	.EXAMPLE
+		# Adding a row with a batch operation
+		$batch = New-AzTableBatch
+		$entity = @{"firstName"="Paulo";"lastName"="Costa";"role"="presenter"}
+		Add-AzTableRow -Batch $batch -PartitionKey $PartitionKey -RowKey ([guid]::NewGuid().tostring()) -Property $entity
+		Invoke-AzTableBatch -Table $Table -Batch $batch
 	#>
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="Table", Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
 		[Parameter(Mandatory=$true)]
 		[AllowEmptyString()]
@@ -241,7 +355,7 @@ function Add-AzTableRow
         [String]$RowKey,
 
 		[Parameter(Mandatory=$false)]
-        [hashtable]$property,
+        [hashtable]$Property,
 		[Switch]$UpdateExisting
 	)
 
@@ -249,21 +363,35 @@ function Add-AzTableRow
 	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
 
     # Adding the additional columns to the table entity
-	foreach ($prop in $property.Keys)
+	foreach ($prop in $Property.Keys)
 	{
 		if ($prop -ne "TableTimestamp")
 		{
-			$entity.Properties.Add($prop, $property.Item($prop))
+			$entity.Properties.Add($prop, $Property.Item($prop))
 		}
 	}
 
     if ($UpdateExisting)
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity))
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		}
 	}
 	else
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		if ($PSCmdlet.ParameterSetName -eq "Batch")
+		{
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity))
+		}
+		else
+		{
+			return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		}
 	}
 }
 
@@ -697,15 +825,17 @@ function Update-AzTableRow
 {
 	<#
 	.SYNOPSIS
-		Updates a table entity
+		Updates a table entity or batch operation
 	.DESCRIPTION
-		Updates a table entity. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
+		Updates a table entity or batch operation. To work with this cmdlet, you need first retrieve an entity with one of the Get-AzTableRow cmdlets available
 		and store in an object, change the necessary properties and then perform the update passing this modified entity back, through Pipeline or as argument.
 		Notice that this cmdlet accepts only one entity per execution.
 		This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required
 		please delete the old entity and add the new one with the updated values instead.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER Entity
 		The entity/row with new values to perform the update.
 	.EXAMPLE
@@ -715,30 +845,42 @@ function Update-AzTableRow
 		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 		$person.lastName = "New Last Name"
 		$person | Update-AzTableRow -Table $Table
+	.EXAMPLE
+		# Updating an entity with a batch operation
+
+		$batch = New-AzTableBatch
+		[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"User1")
+		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
+		$person.lastName = "New Last Name"
+		$person | Update-AzTableRow -Batch $batch
+		Invoke-AzTableBatch -Table $table -Batch $batch
 	#>
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="Table", Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
 		[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-		$entity
+		$Entity
 	)
 
     # Only one entity at a time can be updated
     $updatedEntityList = @()
-    $updatedEntityList += $entity
+    $updatedEntityList += $Entity
 
     if ($updatedEntityList.Count -gt 1)
     {
         throw "Update operation can happen on only one entity at a time, not in a list/array of entities."
     }
 
-	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $entity.PartitionKey, $entity.RowKey
+	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $Entity.PartitionKey, $Entity.RowKey
 
 	# Iterating over PS Object properties to add to the updated entity
-	foreach ($prop in $entity.psobject.Properties)
+	foreach ($prop in $Entity.psobject.Properties)
 	{
 		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp"))
 		{
@@ -746,12 +888,21 @@ function Update-AzTableRow
 		}
 	}
 
-	$updatedEntity.ETag = $entity.Etag
-	$updatedEntity.Timestamp = $entity.TableTimestamp
+	$updatedEntity.ETag = $Entity.Etag
+	$updatedEntity.Timestamp = $Entity.TableTimestamp
 
-    # Updating the dynamic table entity to the table
-    # return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
-	return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	
+	if ($PSCmdlet.ParameterSetName -eq "Batch")
+	{
+		
+		$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity))
+	}
+	else
+	{
+		# Updating the dynamic table entity to the table
+    	# return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	}
 }
 
 function Remove-AzTableRow
@@ -764,6 +915,8 @@ function Remove-AzTableRow
 		available cmdlets. It also can delete a row/entity using Partition and Row Key properties directly.
 	.PARAMETER Table
 		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+	.PARAMETER Batch
+		Batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation to add the entity into if provided.
 	.PARAMETER Entity (ParameterSetName=byEntityPSObjectObject)
 		The entity/row with new values to perform the deletion.
 	.PARAMETER PartitionKey (ParameterSetName=byPartitionandRowKeys)
@@ -778,6 +931,15 @@ function Remove-AzTableRow
 		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
 		$personToDelete | Remove-AzTableRow -Table $Table
 	.EXAMPLE
+		# Deleting an entry with a batch operation
+		$batch = New-AzTableBatch
+		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
+		[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
+		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
+		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		$personToDelete | Remove-AzTableRow -Batch $batch
+		Invoke-AzTableBatch -Table $Table -Batch $batch
+	.EXAMPLE
 		# Deleting an entry by using PartitionKey and row key directly
 		Remove-AzTableRow -Table $Table -PartitionKey "TableEntityDemoFullList" -RowKey "399b58af-4f26-48b4-9b40-e28a8b03e867"
 	.EXAMPLE
@@ -787,17 +949,22 @@ function Remove-AzTableRow
 	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory=$true)]
+		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true)]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		$Table,
+		
+		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		$Batch,
 
-		[Parameter(Mandatory=$true,ValueFromPipeline=$true,ParameterSetName="byEntityPSObjectObject")]
-		$entity,
+		[Parameter(ParameterSetName="Batch", Mandatory=$true,ValueFromPipeline=$true)]
+		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true,ValueFromPipeline=$true)]
+		$Entity,
 
-		[Parameter(Mandatory=$true,ParameterSetName="byPartitionandRowKeys")]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		[AllowEmptyString()]
 		[string]$PartitionKey,
 
-		[Parameter(Mandatory=$true,ParameterSetName="byPartitionandRowKeys")]
+		[Parameter(ParameterSetName="byPartitionandRowKeys",Mandatory=$true)]
 		[AllowEmptyString()]
 		[string]$RowKey
 	)
@@ -805,7 +972,7 @@ function Remove-AzTableRow
 	begin
 	{
 		$updatedEntityList = @()
-		$updatedEntityList += $entity
+		$updatedEntityList += $Entity
 
 		if ($updatedEntityList.Count -gt 1)
 		{
@@ -817,32 +984,46 @@ function Remove-AzTableRow
 
 	process
 	{
-		if ($PSCmdlet.ParameterSetName -eq "byEntityPSObjectObject")
+		$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
+
+		if ($PSCmdlet.ParameterSetName -ne "byPartitionandRowKeys")
 		{
-			$PartitionKey = $entity.PartitionKey
-			$RowKey = $entity.RowKey
+			$PartitionKey = $Entity.PartitionKey
+			$RowKey = $Entity.RowKey
 		}
 
-		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
-		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
-		$TableQuery.FilterString = $Filter
-		$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		if ($PSCmdlet.ParameterSetName -eq "Batch") {
+			$entityToDelete.ETag = $entity.ETag
+			$entityToDelete.PartitionKey = $entity.PartitionKey
+			$entityToDelete.RowKey = $entity.RowKey
+		} else {
+			$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
+			[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
+			$TableQuery.FilterString = $Filter
+			$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		}
 
 		if ($itemToDelete -ne $null)
 		{
+			# Non-batch
 			# Converting DynamicTableEntity to TableEntity for deletion
-			$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
 			$entityToDelete.ETag = $itemToDelete.Etag
 			$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
 			$entityToDelete.RowKey = $itemToDelete.RowKey
-
+			
 			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
+		} elseif ($PSCmdlet.ParameterSetName -eq "Batch") {
+			# Batch
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
 		}
 	}
 
 	end
 	{
-		return ,$Results
+		if ($PSCmdlet.ParameterSetName -ne "Batch")
+		{
+			return ,$Results
+		}
 	}
 }
 

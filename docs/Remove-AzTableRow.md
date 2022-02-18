@@ -14,12 +14,17 @@ Remove-AzTableRow - Removes a specified table row
 
 ### byEntityPSObjectObject
 ```powershell
-Remove-AzTableRow -Table <Object> -entity <Object> [<CommonParameters>]
+Remove-AzTableRow -Table <Object> -Entity <Object> [<CommonParameters>]
 ```
 
 ### byPartitionandRowKeys
 ```powershell
 Remove-AzTableRow -Table <Object> -PartitionKey <String> -RowKey <String> [<CommonParameters>]
+```
+
+### Batch
+```powershell
+Remove-AzTableRow -Batch <Object> -Entity <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -50,6 +55,18 @@ Remove-AzTableRow -Table $Table -PartitionKey "TableEntityDemoFullList" -RowKey 
 Get-AzTableRowAll -Table $Table | Remove-AzTableRow -Table $Table
 ```
 
+### EXAMPLE 4
+```powershell
+# Deleting an entry with a batch operation
+$batch = New-AzTableBatch
+[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
+[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
+[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
+$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+$personToDelete | Remove-AzTableRow -Batch $batch
+Invoke-AzTableBatch -Table $Table -Batch $batch
+```
+
 ## PARAMETERS
 
 ### -Table
@@ -57,7 +74,7 @@ Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity ex
 
 ```yaml
 Type: Object
-Parameter Sets: (All)
+Parameter Sets: byEntityPSObjectObject, byPartitionandRowKeys
 Aliases:
 
 Required: True
@@ -67,12 +84,27 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -entity
-{{ Fill entity Description }}
+### -Batch
+Table batch operation object of type Microsoft.Azure.Cosmos.Table.TableBatchOperation where the entity will be deleted
 
 ```yaml
 Type: Object
-Parameter Sets: byEntityPSObjectObject
+Parameter Sets: Batch
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Entity
+The entity/row with new values to delete
+
+```yaml
+Type: Object
+Parameter Sets: byEntityPSObjectObject, Batch
 Aliases:
 
 Required: True
@@ -83,7 +115,7 @@ Accept wildcard characters: False
 ```
 
 ### -PartitionKey
-{{ Fill PartitionKey Description }}
+Identifies the partition in the table
 
 ```yaml
 Type: String
@@ -98,7 +130,7 @@ Accept wildcard characters: False
 ```
 
 ### -RowKey
-{{ Fill RowKey Description }}
+Identifies a row within a partition
 
 ```yaml
 Type: String
