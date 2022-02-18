@@ -42,9 +42,7 @@
                             'Get-AzTableRowByCustomFilter',
                             'Update-AzTableRow',
                             'Remove-AzTableRow',
-                            'Get-AzTableTable',
-                            'New-AzTableBatch',
-                            'Invoke-AzTableBatch'
+                            'Get-AzTableTable'
                             )
     
     VariablesToExport = ''

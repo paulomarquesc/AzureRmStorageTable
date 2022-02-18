@@ -141,10 +141,11 @@ Describe "AzureRmStorageTable" {
             $entity = $null
             $expectedProperty1Content = "COMP01"
             $expectedProperty2Content = "Windows 10"
+            $expectedProperty3Content = "OK"
             $PK = [guid]::NewGuid().Guid
             $RK = [guid]::NewGuid().Guid
 
-            Add-AzTableRow -table $tableInsert -partitionKey $PK -rowKey $RK -property @{"computerName"=$expectedProperty1Content;"osVersion"=$expectedProperty2Content}
+            Add-AzTableRow -table $tableInsert -partitionKey $PK -rowKey $RK -property @{"computerName"=$expectedProperty1Content;"osVersion"=$expectedProperty2Content;"status"=$expectedProperty3Content}
 
             $entity = Get-AzTableRow -table $tableInsert -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
 
@@ -322,6 +323,28 @@ Describe "AzureRmStorageTable" {
             $entity = Get-AzTableRow -table $tableDelete -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
             $entity | Should -Be $null
         }
+
+        It "Can add remove entities with a batch operation" {
+            $batch = New-AzTableBatch
+            $PK = [guid]::NewGuid().Guid
+            $RK1 = [guid]::NewGuid().tostring()
+            $RK2 = [guid]::NewGuid().tostring()
+
+            Add-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey $RK1
+            Add-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey $RK2
+
+            $entity1 = Get-AzTableRow -Table $tableDelete -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK1)')"
+            $entity2 = Get-AzTableRow -Table $tableDelete -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK2)')"
+
+            Remove-AzTableRow -Batch $batch -Entity $entity1
+            Remove-AzTableRow -Batch $batch -Entity $entity2
+
+            $batch.Count | Should -Be 2
+
+            # Cleanup
+            Remove-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey $RK1
+            Remove-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey $RK2
+        }
     }
     
     Context "Update-AzTableRow" {
@@ -332,7 +355,7 @@ Describe "AzureRmStorageTable" {
         It "Can it update an entity" {
             $expectedValue = "NeedsOsUpgrade"
             
-            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
+            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP04")
             $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
             $UpdateEntity.status | Should -Be $expectedValue
 
@@ -346,6 +369,117 @@ Describe "AzureRmStorageTable" {
             # Getting the entity again to check the changes
             $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
             $UpdateEntity.status | Should -Not -Be $expectedValue
+        }
+
+        It "Can update multiple entities with a batch operation" {
+            $expectedValue = "NeedsOsUpgrade"
+            
+            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("osVersion",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Windows 8.1")
+            $UpdateEntities = Get-AzTableRow -table $tableInsert -customFilter $filter
+
+            $batch = New-AzTableBatch
+
+            # Changing values
+            foreach ($entity in $UpdateEntities) {
+                $entity.status | Should -Be $expectedValue
+                $entity.osVersion = "Windows 10"
+                $entity.status = "OK"
+
+                $entity | Update-AzTableRow -Batch $batch
+            }
+
+            $batch.Count | Should -Be 2
+        }
+    }
+
+    Context "Invoke-AzTableBatch" {
+        BeforeAll {
+            $tableInsert = $tables | Where-Object -Property Name -eq "table$($uniqueString)insert"
+            $tableDelete = $tables | Where-Object -Property Name -eq "table$($uniqueString)delete"
+        }
+
+        It "Can delete multiple rows with a batch operation" {
+            $PK = [guid]::NewGuid().ToString()
+
+            Add-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey ([guid]::NewGuid().ToString()) -Property @{"computerName"="COMP01";"osVersion"="Windows 10";"status"="OK"}
+            Add-AzTableRow -Table $tableDelete -PartitionKey $PK -RowKey ([guid]::NewGuid().ToString()) -Property @{"computerName"="COMP02";"osVersion"="Windows 10";"status"="OK"}
+
+            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("status",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"OK")
+            $toDelete = Get-AzTableRow -table $tableDelete -customFilter $filter
+
+            $batch = New-AzTableBatch
+
+            foreach ($entity in $toDelete) {
+                $entity | Remove-AzTableRow -Batch $batch
+            }
+
+            Invoke-AzTableBatch -Table $tableDelete -Batch $batch
+
+            $entity = Get-AzTableRow -table $tableDelete
+
+            $entity | Should -BeNullOrEmpty
+        }
+
+        It "Can add multiple rows with a batch operation" {
+            $property1 = @{
+                computerName = "COMP06"
+                osVersion = "Windows XP"
+                status = "NeedsOsUpgrade"
+            }
+
+            $property2 = @{
+                computerName = "COMP07"
+                osVersion = "Windows 11"
+                status = "OK"
+            }
+
+            $PK = [guid]::NewGuid().ToString()
+
+            $batch = New-AzTableBatch
+
+            Add-AzTableRow -Batch $batch -PartitionKey $PK -RowKey ([guid]::NewGuid().ToString()) -Property $property1
+            Add-AzTableRow -Batch $batch -PartitionKey $PK -RowKey ([guid]::NewGuid().ToString()) -Property $property2
+
+            Invoke-AzTableBatch -Table $tableInsert -Batch $batch
+
+            $allEntities = Get-AzTableRow -Table $tableInsert
+
+            $allEntities.Count | Should -Be 12
+        }
+
+        It "Can update multiple entities with different partitions" {
+            $batch = New-AzTableBatch
+
+            $toUpgrade = Get-AzTableRow -Table $tableInsert -CustomFilter "(status eq 'NeedsOsUpgrade') or (osVersion eq 'Windows 10')"
+
+            foreach ($entity in $toUpgrade) {
+                #Write-Host -for Yellow (ConvertTo-Json ($entity))
+                $entity.status = "OK"
+                $entity.osVersion = "Windows 11"
+
+                $entity | Update-AzTableRow -Batch $batch
+            }
+
+            Invoke-AzTableBatch -Table $tableInsert -Batch $batch
+
+            $needsOsUpgrade = Get-AzTableRow -Table $tableInsert -CustomFilter "(status eq 'NeedsOsUpgrade')"
+            $win10 = Get-AzTableRow -Table $tableInsert -CustomFilter "(osVersion eq 'Windows 10')"
+            $winXP = Get-AzTableRow -Table $tableInsert -CustomFilter "(osVersion eq 'Windows XP')"
+            $win8 = Get-AzTableRow -Table $tableInsert -CustomFilter "(osVersion eq 'Windows 8.1')"
+
+            $needsOsUpgrade | Should -BeNullOrEmpty
+            $win10 | Should -BeNullOrEmpty
+            $winXP | Should -BeNullOrEmpty
+            $win8 | Should -BeNullOrEmpty
+
+            $all = Get-AzTableRow -Table $tableInsert
+
+            foreach ($entity in $all) {
+                if ($null -ne $entity.status) {
+                    $entity.status | Should -Be "OK"
+                    $entity.osVersion | Should -Be "Windows 11"
+                }
+            }
         }
     }
 

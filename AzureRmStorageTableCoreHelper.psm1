@@ -14,6 +14,41 @@
 # Deprecated Message
 $DeprecatedMessage = "IMPORTANT: This function is deprecated and will be removed in the next release, please use Get-AzTableRow instead."
 
+# Module Class
+
+class AzTableBatchOperation
+{
+	[hashtable]$BatchOperationMap
+	[int]$Count
+
+	AzTableBatchOperation() {
+		$this.BatchOperationMap = @{}
+		$this.Count = 0
+	}
+
+	Add(
+		[Microsoft.Azure.Cosmos.Table.TableOperation] $operation
+	) {
+		$partition = $operation.Entity.PartitionKey
+		$thisBatch = $this.BatchOperationMap[$partition]
+		if ($null -eq $thisBatch) {
+			$newBatch = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+			$newBatch.Add($operation)
+			$this.BatchOperationMap[$partition] = $newBatch
+		} else {
+			$thisBatch.Add($operation)
+		}
+
+		$this.Count++
+	}
+
+	[Microsoft.Azure.Cosmos.Table.TableBatchOperation] GetBatchOperation(
+		[string] $partition
+	) {
+		return $this.BatchOperationMap[$partition]
+	}
+}
+
 # Module Functions
 
 function TestAzTableEmptyKeys
@@ -136,10 +171,10 @@ function New-AzTableBatch
 
 	if ($null -eq $Operations) {
 		# Will return null without this line
-		return New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation"
+		return [AzTableBatchOperation]::new()
 	}
 
-	$batchOperation = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableBatchOperation" 
+	$batchOperation = [AzTableBatchOperation]::new()
 
 	foreach ($operation in $Operations)
 	{
@@ -168,10 +203,12 @@ function Invoke-AzTableBatch
         [Microsoft.Azure.Cosmos.Table.CloudTable]$Table,
 
         [Parameter(Mandatory=$true)]
-        [Microsoft.Azure.Cosmos.Table.TableBatchOperation]$Batch
+        [AzTableBatchOperation]$Batch
     )
 
-    return $Table.ExecuteBatch($Batch)
+	foreach ($partition in $Batch.BatchOperationMap.Keys) {
+		$Table.ExecuteBatch($Batch.BatchOperationMap[$partition])
+	}
 }
 
 function Get-AzTableTable
@@ -338,7 +375,7 @@ function Add-AzTableRow
 	{
 		if ($PSCmdlet.ParameterSetName -eq "Batch")
 		{
-			$Batch.InsertOrReplace($entity)
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity))
 		}
 		else
 		{
@@ -349,7 +386,7 @@ function Add-AzTableRow
 	{
 		if ($PSCmdlet.ParameterSetName -eq "Batch")
 		{
-			$Batch.Insert($entity)
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity))
 		}
 		else
 		{
@@ -857,7 +894,8 @@ function Update-AzTableRow
 	
 	if ($PSCmdlet.ParameterSetName -eq "Batch")
 	{
-		$Batch.InsertOrMerge($updatedEntity)
+		
+		$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity))
 	}
 	else
 	{
@@ -918,7 +956,7 @@ function Remove-AzTableRow
 		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
 		$Batch,
 
-		[Parameter(ParameterSetName="Batch", Mandatory=$true)]
+		[Parameter(ParameterSetName="Batch", Mandatory=$true,ValueFromPipeline=$true)]
 		[Parameter(ParameterSetName="byEntityPSObjectObject",Mandatory=$true,ValueFromPipeline=$true)]
 		$Entity,
 
@@ -946,33 +984,37 @@ function Remove-AzTableRow
 
 	process
 	{
+		$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
+
 		if ($PSCmdlet.ParameterSetName -ne "byPartitionandRowKeys")
 		{
 			$PartitionKey = $Entity.PartitionKey
 			$RowKey = $Entity.RowKey
 		}
 
-		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
-		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
-		$TableQuery.FilterString = $Filter
-		$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		if ($PSCmdlet.ParameterSetName -eq "Batch") {
+			$entityToDelete.ETag = $entity.ETag
+			$entityToDelete.PartitionKey = $entity.PartitionKey
+			$entityToDelete.RowKey = $entity.RowKey
+		} else {
+			$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
+			[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
+			$TableQuery.FilterString = $Filter
+			$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		}
 
 		if ($itemToDelete -ne $null)
 		{
+			# Non-batch
 			# Converting DynamicTableEntity to TableEntity for deletion
-			$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
 			$entityToDelete.ETag = $itemToDelete.Etag
 			$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
 			$entityToDelete.RowKey = $itemToDelete.RowKey
-
-			if ($PSCmdlet.ParameterSetName -eq "Batch")
-			{
-				$Batch.Delete($entityToDelete)
-			}
-			else
-			{
-				$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))	
-			}
+			
+			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
+		} elseif ($PSCmdlet.ParameterSetName -eq "Batch") {
+			# Batch
+			$Batch.Add([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
 		}
 	}
 

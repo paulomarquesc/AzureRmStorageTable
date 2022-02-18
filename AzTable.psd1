@@ -44,7 +44,7 @@ FunctionsToExport = @(  'Add-AzTableRow',
                         'Remove-AzTableRow',
                         'Get-AzTableTable',
                         'New-AzTableBatch',
-                        'Save-AzTableBatch'
+                        'Invoke-AzTableBatch'
                         )
 
 VariablesToExport = ''
