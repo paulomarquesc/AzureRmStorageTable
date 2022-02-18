@@ -481,6 +481,22 @@ Describe "AzureRmStorageTable" {
                 }
             }
         }
+
+        It "Can delete all entries in a table with different partitions" {
+            $batch = New-AzTableBatch
+
+            $all = Get-AzTableRow -Table $tableInsert
+
+            foreach ($entity in $all) {
+                $entity | Remove-AzTableRow -Batch $batch
+            }
+
+            Invoke-AzTableBatch -Table $tableInsert -Batch $batch
+
+            $check = Get-AzTableRow -Table $tableInsert
+
+            $check | Should -BeNullOrEmpty
+        }
     }
 
     AfterAll { 
