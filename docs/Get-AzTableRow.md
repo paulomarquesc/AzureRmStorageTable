@@ -18,13 +18,13 @@ Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List
  -CustomFilter <String> [-Top <Int32>] [<CommonParameters>]
 ```
 
-### byColummnGuid
+### byColumnGuid
 ```powershell
 Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
  [-ColumnName <String>] -GuidValue <Guid> [-Operator <String>] [-Top <Int32>] [<CommonParameters>]
 ```
 
-### byColummnString
+### byColumnString
 ```powershell
 Get-AzTableRow [-Table <Object>] [-SelectColumn <System.Collections.Generic.List`1[System.String]>]
  -ColumnName <String> -Value <String> -Operator <String> [-Top <Int32>] [<CommonParameters>]
