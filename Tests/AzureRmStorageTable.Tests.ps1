@@ -10,15 +10,13 @@ param
 
 Import-Module .\AzTable.psd1 -Force
 
-#$uniqueString = Get-Date -UFormat "PsTest%Y%m%dT%H%M%S"
-$uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
-$resourceGroup = "$uniqueString-rg"
-
-$GetAzTableTableCmdtTableName = "TestTable"
-
 Describe "AzureRmStorageTable" {
     BeforeAll {
-        if ($PSCmdlet.ParameterSetName -ne "AzureStorage")
+        $uniqueString = [string]::Format("s{0}{1}",("{0:X}" -f (([guid]::NewGuid()).Guid.ToString().GetHashCode())).ToLower(), (Get-Date -UFormat "%Y%m%dT%H%M%S").ToString().ToLower())
+        $resourceGroup = "$uniqueString-rg"
+        $GetAzTableTableCmdtTableName = "TestTable$uniqueString"
+
+        if ([string]::IsNullOrEmpty($SubscriptionId))
         {
             # Storage Emulator
             $context = Az.Storage\New-AzStorageContext -Local
@@ -32,14 +30,14 @@ Describe "AzureRmStorageTable" {
             $context = (Get-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup).Context
         }
 
-        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
+        $GetTableCommand = if ([string]::IsNullOrEmpty($SubscriptionId)) { "-UseStorageEmulator" } else { "-ResourceGroup $resourceGroup -StorageAccountName $uniqueString" }
 
         $tables = [System.Collections.ArrayList]@()
         $tableNames = @("table$($uniqueString)insert", "table$($uniqueString)delete")
         foreach ($tableName in $tableNames)
         {
             Write-Host -for DarkGreen "   Creating Storage Table $($tableName)"
-            $Table = Invoke-Expression("Get-AzTableTable -table `$tableName $GetTableCommand")
+            $Table = Invoke-Expression("Get-AzTableTable -table $tableName $GetTableCommand")
 
             Write-Host -for Green "      Created Table $($table | out-string)"
             $tables.Add($table)
@@ -48,16 +46,14 @@ Describe "AzureRmStorageTable" {
 
     Context "Get-AzTableTable" {
 
-        $GetTableCommand=@{$true = "-UseStorageEmulator"; $false = "-ResourceGroup `$resourceGroup -StorageAccountName `$uniqueString"}[($PSCmdlet.ParameterSetName -ne "AzureStorage")]
-
         It "Can create a new table" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
-            $Table | Should not be $null
+            $Table = Invoke-Expression("Get-AzTableTable -table $GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table | Should -Not -Be $null
         }
 
         It "Can open an existing table" {
-            $Table = Invoke-Expression("Get-AzTableTable -table `$GetAzTableTableCmdtTableName $GetTableCommand") 
-            $Table | Should not be $null
+            $Table = Invoke-Expression("Get-AzTableTable -table $GetAzTableTableCmdtTableName $GetTableCommand") 
+            $Table | Should -Not -Be $null
         }
     }
 
@@ -75,8 +71,8 @@ Describe "AzureRmStorageTable" {
 
             $entity = Get-AzTableRow -table $tableInsert
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
+            $entity.PartitionKey | Should -Be $expectedPK
+            $entity.RowKey | Should -Be $expectedRK
         }
 
         It "Can add entity with empty partition key" {
@@ -88,8 +84,8 @@ Describe "AzureRmStorageTable" {
 
             $entity = Get-AzTableRow -table $tableInsert -partitionKey $expectedPK
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
+            $entity.PartitionKey | Should -Be $expectedPK
+            $entity.RowKey | Should -Be $expectedRK
         }
 
         It "Can add entity with empty row key" {
@@ -101,8 +97,8 @@ Describe "AzureRmStorageTable" {
 
             $entity = Get-AzTableRow -table $tableInsert -columnName "RowKey" -value $expectedRK -operator Equal
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
+            $entity.PartitionKey | Should -Be $expectedPK
+            $entity.RowKey | Should -Be $expectedRK
         }
 
         It "Can add entity with empty partition and row keys" {
@@ -114,8 +110,8 @@ Describe "AzureRmStorageTable" {
 
             $entity = Get-AzTableRow -table $tableInsert -customFilter "(PartitionKey eq '$($expectedPK)') and (RowKey eq '$($expectedRK)')"
 
-            $entity.PartitionKey | Should be $expectedPK
-            $entity.RowKey | Should be $expectedRK
+            $entity.PartitionKey | Should -Be $expectedPK
+            $entity.RowKey | Should -Be $expectedRK
         }
 
         It "Can add entity with properties" {
@@ -129,8 +125,8 @@ Describe "AzureRmStorageTable" {
 
             $entity = Get-AzTableRow -table $tableInsert -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
 
-            $entity.computerName | Should be $expectedProperty1Content
-            $entity.osVersion | Should be $expectedProperty2Content
+            $entity.computerName | Should -Be $expectedProperty1Content
+            $entity.osVersion | Should -Be $expectedProperty2Content
         }
     }
 
@@ -150,36 +146,36 @@ Describe "AzureRmStorageTable" {
             $entityList = $null
             $expectedRowCount = 9
             $entityList = Get-AzTableRow -table $tableInsert
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Can it get specific columns for a specific row" {
             $entity = $null
             $expectedStringValue = "Windows 10"
             $entity = Get-AzTableRow -Table $tableInsert -partitionKey $partitionKey -rowKey $rowKey -SelectColumn @('osVersion', 'computerName')
-            $entity.osVersion | Should be $expectedStringValue
-            $entity.status | Should be $null
+            $entity.osVersion | Should -Be $expectedStringValue
+            $entity.status | Should -Be $null
         }
 
         It "Can it get rows by partition key" {
             $entityList = $null
             $expectedRowCount = 4
             $entityList = Get-AzTableRow -table $tableInsert -partitionKey $partitionKey
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Can it get rows by partition key, limiting the number of results" {
             $entityList = $null
             $expectedRowCount = 2
             $entityList = Get-AzTableRow -table $tableInsert -partitionKey $partitionKey -Top 2
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Can it get row by partition and row key" {
             $entityList = $null
             $expectedRowCount = 1
             $entityList = @(Get-AzTableRow -table $tableInsert -partitionKey $partitionKey -RowKey $rowKey)
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Can it get row by column name using guid value" {
@@ -188,35 +184,35 @@ Describe "AzureRmStorageTable" {
             Add-AzTableRow -table $tableInsert -partitionKey $partitionKey -rowKey ([guid]::NewGuid().tostring())-property @{"computerName"="COMP05";"osVersion"="Windows 10";"status"="OK";"id"=$expectedGuidValue}
 
             $entity = Get-AzTableRow -Table $tableInsert -ColumnName "id" -guidvalue $expectedGuidValue -operator Equal
-            $entity.id | Should be $expectedGuidValue
+            $entity.id | Should -Be $expectedGuidValue
         }
 
         It "Can it get row by column name using string value" {
             $entity = $null
             $expectedStringValue = "COMP02"
             $entity = Get-AzTableRow -Table $tableInsert -ColumnName "computerName" -value $expectedStringValue -operator Equal
-            $entity.computerName | Should be $expectedStringValue
+            $entity.computerName | Should -Be $expectedStringValue
         }
 
         It "Can it get row using custom filter" {
             $entityList = $null
             $expectedRowCount = 1
             $entityList = @(Get-AzTableRow -Table $tableInsert -CustomFilter "(osVersion eq 'Windows XP') and (computerName eq 'COMP04')")
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Can limit the number of results" {
             $entityList = $null
             $expectedRowCount = 5
             $entityList = Get-AzTableRow -table $tableInsert -Top 5
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
 
         It "Doesn't break when there are more rows than TakeCount" {
             $entityList = $null
             $expectedRowCount = 10
             $entityList = Get-AzTableRow -table $tableInsert -Top 86
-            $entityList.Count | Should be $expectedRowCount
+            $entityList.Count | Should -Be $expectedRowCount
         }
     }
 
@@ -233,12 +229,12 @@ Describe "AzureRmStorageTable" {
             Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
 
             $entity = Get-AzTableRow -table $tableDelete
-            $entity | Should Not Be $null
+            $entity | Should -Not -Be $null
 
             Remove-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK 
 
             $entity = Get-AzTableRow -table $tableDelete
-            $entity | Should Be $null
+            $entity | Should -Be $null
         }
 
         It "Can delete entity with empty partition key" {
@@ -248,13 +244,13 @@ Describe "AzureRmStorageTable" {
 
             Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
 
-            $entity = Get-AzTableRow -table $tableDelete -partitionKey $expectedPK
-            $entity | Should Not Be $null
+            $entity = Get-AzTableRow -table $tableDelete -partitionKey $PK
+            $entity | Should -Not -Be $null
 
             Remove-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK
 
             $entity = Get-AzTableRow -table $tableDelete -partitionKey $PK
-            $entity | Should Be $null
+            $entity | Should -Be $null
         }
 
         It "Can delete entity with empty row key" {
@@ -265,13 +261,13 @@ Describe "AzureRmStorageTable" {
             Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
 
             $entity = Get-AzTableRow -table $tableDelete -columnName "RowKey" -value $RK -operator Equal
-            $entity | Should Not Be $null
+            $entity | Should -Not -Be $null
 
             Remove-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK
 
             $entity = Get-AzTableRow -table $tableDelete -columnName "RowKey" -value $RK -operator Equal
 
-            $entity | Should Be $null
+            $entity | Should -Be $null
         }
 
         It "Can delete entity with empty partition and row keys" {
@@ -282,12 +278,12 @@ Describe "AzureRmStorageTable" {
             Add-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK -property @{}
 
             $entity = Get-AzTableRow -table $tableDelete -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
-            $entity | Should Not Be $null
+            $entity | Should -Not -Be $null
 
             Remove-AzTableRow -table $tableDelete -partitionKey $PK -rowKey $RK
 
             $entity = Get-AzTableRow -table $tableDelete -customFilter "(PartitionKey eq '$($PK)') and (RowKey eq '$($RK)')"
-            $entity | Should Be $null
+            $entity | Should -Be $null
         }
     }
     
@@ -299,9 +295,9 @@ Describe "AzureRmStorageTable" {
         It "Can it update an entity" {
             $expectedValue = "NeedsOsUpgrade"
             
-            [string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
+            [string]$filter = "computerName eq 'COMP03'"
             $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
-            $UpdateEntity.status | Should Be $expectedValue
+            $UpdateEntity.status | Should -Be $expectedValue
 
             # Changing values
             $UpdateEntity.osVersion = "Windows 10"
@@ -312,7 +308,7 @@ Describe "AzureRmStorageTable" {
 
             # Getting the entity again to check the changes
             $UpdateEntity = Get-AzTableRow -table $tableInsert -customFilter $filter
-            $UpdateEntity.status | Should Not Be $expectedValue
+            $UpdateEntity.status | Should -Not -Be $expectedValue
         }
     }
 
@@ -320,17 +316,23 @@ Describe "AzureRmStorageTable" {
         Write-Host -for DarkGreen "Cleanup in process"
 
         # Removing Get-AzTableTable test table
-        Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force
-
-        foreach ($tableName in $tableNames)
+        if ($null -ne $GetAzTableTableCmdtTableName -and $null -ne $context)
         {
-            Remove-AzStorageTable -Context $context -Name $tableName -Force
+            Remove-AzStorageTable $GetAzTableTableCmdtTableName -Context $context -Force -ErrorAction SilentlyContinue
         }
 
-        if ($PSCmdlet.ParameterSetName -eq "AzureStorage")
+        if ($null -ne $tableNames -and $null -ne $context)
         {
-            Remove-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Force
-            Remove-AzResourceGroup -Name $resourceGroup -Force
+            foreach ($tableName in $tableNames)
+            {
+                Remove-AzStorageTable -Context $context -Name $tableName -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        if ($null -ne $uniqueString -and $PSCmdlet.ParameterSetName -eq "AzureStorage")
+        {
+            Remove-AzStorageAccount -Name $uniqueString -ResourceGroupName $resourceGroup -Force -ErrorAction SilentlyContinue
+            Remove-AzResourceGroup -Name $resourceGroup -Force -ErrorAction SilentlyContinue
         }
 
         Write-Host -for DarkGreen "Done"

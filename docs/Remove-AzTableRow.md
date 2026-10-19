@@ -31,9 +31,7 @@ It accepts multiple deletions through the Pipeline when passing entities returne
 ### EXAMPLE 1
 ```powershell
 # Deleting an entry by entity PS Object
-[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
-[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
-[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
+[string]$finalFilter = "(firstName eq 'Paulo') and (lastName eq 'Marques')"
 $personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
 $personToDelete | Remove-AzTableRow -Table $Table
 ```
@@ -53,7 +51,7 @@ Get-AzTableRowAll -Table $Table | Remove-AzTableRow -Table $Table
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+Table object of type Azure.Data.Tables.TableClient where the entity exists
 
 ```yaml
 Type: Object

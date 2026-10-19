@@ -89,7 +89,7 @@ Get-AzTableRow -Table $Table -partitionKey NewYorkSite -Top 10
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities (common to all parameter sets)
+Table object of type Azure.Data.Tables.TableClient to retrieve entities (common to all parameter sets)
 
 ```yaml
 Type: Object

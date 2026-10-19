@@ -31,7 +31,7 @@ Add-AzTableRow -Table $Table -PartitionKey $PartitionKey -RowKey ([guid]::NewGui
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+Table object of type Azure.Data.Tables.TableClient where the entity will be added
 
 ```yaml
 Type: Object

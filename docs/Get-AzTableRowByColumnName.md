@@ -44,7 +44,7 @@ Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" 
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+Table object of type Azure.Data.Tables.TableClient to retrieve entities
 
 ```yaml
 Type: Object

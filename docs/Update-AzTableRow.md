@@ -26,7 +26,7 @@ To work with this cmdlet, you need first retrieve an entity with one of the Get-
 ```powershell
 # Updating an entity
 
-[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"User1")
+[string]$Filter = "firstName eq 'User1'"
 $person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 $person.lastName = "New Last Name"
 $person | Update-AzTableRow -Table $Table
@@ -35,7 +35,7 @@ $person | Update-AzTableRow -Table $Table
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+Table object of type Azure.Data.Tables.TableClient where the entity exists
 
 ```yaml
 Type: Object

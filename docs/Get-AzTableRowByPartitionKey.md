@@ -36,7 +36,7 @@ Get-AzTableRowByPartitionKey -Table $Table -PartitionKey "mypartitionkey" -Top 1
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+Table object of type Azure.Data.Tables.TableClient to retrieve entities
 
 ```yaml
 Type: Object

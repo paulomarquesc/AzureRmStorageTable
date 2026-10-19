@@ -19,13 +19,13 @@ Get-AzTableRowByCustomFilter [-Table] <Object> [-CustomFilter] <String> [[-Top] 
 ## DESCRIPTION
 Returns one or more rows/entities based on custom Filter.
 This custom Filter can be
-built using the Microsoft.Azure.Cosmos.Table.TableQuery class or direct text.
+built using OData filter syntax or direct text.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 ```powershell
-# Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
+# Getting row by firstname by using an OData filter string
 $MyFilter = "(firstName eq 'User1')"
 Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $MyFilter
 ```
@@ -45,7 +45,7 @@ Get-AzTableRowByColumnName -Table $Table -ColumnName "firstName" -value "Paulo" 
 ## PARAMETERS
 
 ### -Table
-Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+Table object of type Azure.Data.Tables.TableClient to retrieve entities
 
 ```yaml
 Type: Object

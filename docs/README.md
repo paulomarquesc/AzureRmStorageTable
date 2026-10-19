@@ -1,6 +1,6 @@
 # Working with Azure Tables from PowerShell - AzureRmStorageTable/AzTable PS Module v2.0
 
-This document shows how to work with Azure Storage Tables from PowerShell, through a sample PowerShell module that was created for operations like Add, Retrieve, Update and Delete table rows/entities exposed as functions. Now supporting the new Az PowerShell module plus the SDK change from Microsoft.WindowsAzure.Storage to Microsoft.Azure.Cosmos assembly.
+This document shows how to work with Azure Storage Tables from PowerShell, through a sample PowerShell module that was created for operations like Add, Retrieve, Update and Delete table rows/entities exposed as functions. Now supporting the new Az PowerShell module with Azure.Data.Tables.
 
 ## In this document
 
@@ -243,16 +243,16 @@ Get-AzTableRow -table $table -columnName id -guidValue ([guid]"30cd1759-45b3-4ea
 
 ![result by column and guid](./media/guid.png)
 
-#### Queries using custom filters with help of Microsoft.Azure.Cosmos.Table.TableQuery class and direct string text
+#### Queries using custom filters
 
 The custom filter is an important option since we are not covering all data types from the module, for example datetime types.
 
->Note: When working with logical operators (and, or, not), they are case-sensitive and must be used as lower case since the underlying SDK uses OData v3 specification. [Here](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#sec_LogicalOperators) you can find more information.  
+>Note: When working with logical operators (and, or, not), they are case-sensitive and must be used as lower case since the underlying SDK uses OData specification. [Here](http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html#sec_LogicalOperators) you can find more information.  
 
 ##### Simple filter
 
 ```powershell
-[string]$filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP06")
+[string]$filter1 = "computerName eq 'COMP06'"
 Get-AzTableRow -table $table -customFilter $filter1
 ```
 
@@ -263,9 +263,7 @@ Result
 ##### Combined filter
 
 ```powershell
-[string]$filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
-[string]$filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("status",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"NeedsOsUpgrade")
-[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($filter1,"and",$filter2)
+[string]$finalFilter = "(computerName eq 'COMP03') and (status eq 'NeedsOsUpgrade')"
 Get-AzTableRow -table $table -customFilter $finalFilter
 ```
 
@@ -297,7 +295,7 @@ Example:
 
 ```powershell
 # Creating the filter and getting original entity
-[string]$filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName ",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP03")
+[string]$filter = "computerName eq 'COMP03'"
 $computer = Get-AzTableRow -table $table -customFilter $filter
 
 # Changing values
@@ -325,7 +323,7 @@ Similarly to the update process here we have two steps as follows unless you kno
 #### Deleting a single row/entity by piping the entity
 
 ```powershell
-[string]$filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP02")
+[string]$filter1 = "computerName eq 'COMP02'"
 $computerToDelete = Get-AzTableRow -table $table -customFilter $filter1
 
 $computerToDelete | Remove-AzTableRow -table $table
@@ -340,7 +338,7 @@ Result
 #### Deleting a single row/entity passing entity as argument
 
 ```powershell
-[string]$filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("computerName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"COMP06")
+[string]$filter1 = "computerName eq 'COMP06'"
 $computerToDelete = Get-AzTableRow -table $table -customFilter $filter1
 
 Remove-AzTableRow -table $table –entity $computerToDelete
@@ -401,20 +399,21 @@ This section helps you troubleshoot some of the most common issues:
   
     If your column data type is not supported directly within the module, custom filtering can help, please refer to [#issue 35](https://github.com/paulomarquesc/AzureRmStorageTable/issues/35) and that shows an example on how to use other filtering options and a link to the SDK with all supported types.
 
-* **(TIP) How to obtain the CloudTable object from a table based SAS Token**
+* **(TIP) How to obtain the TableClient object from a table based SAS Token**
   
-    This code sample can be used as a basis on how to obtain the CloudTable object from a table SAS token:
+    This code sample can be used as a basis on how to obtain the TableClient object from a table SAS token:
 
     ```powershell
     # sample table SAS URI
     $tableSASUri = "https://[accountName].table.core.windows.net/[tableName]?sv=2017-07-29&tn=[tableName]&sig=[hidden]&se=2021-03-15T07%3A00%3A09Z&sp=raud"
 
-    # create CloudTable object from the SAS URI
+    # create TableClient object from the SAS URI
     $uri = [System.Uri]$tableSASUri
-    $CloudTable= New-Object -TypeName Microsoft.Azure.Cosmos.Table.CloudTable $uri 
+    $TableClient = [Azure.Data.Tables.TableClient]::new($uri)
 
-    # Use the CloudTable object to run cmdlets in module AzTable
-    Get-AzTableRow -Table $CloudTable 
+    # Use the TableClient object to run cmdlets in module AzTable
+    Get-AzTableRow -Table $TableClient
+    ```
     ```
 
 ## References<a name="references"></a>

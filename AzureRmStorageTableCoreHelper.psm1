@@ -27,11 +27,11 @@ function TestAzTableEmptyKeys
 		$RowKey
 	)
 
-    $CosmosEmptyKeysErrorMessage = "Cosmos DB table API does not accept empty partition or row keys when using CloudTable.Execute operation, because of this we are disabling this capability in this module and it will not proceed."
+    $EmptyKeysErrorMessage = "Table API does not accept empty partition or row keys when using table operations, because of this we are disabling this capability in this module and it will not proceed."
 
     if ([string]::IsNullOrEmpty($PartitionKey) -or [string]::IsNullOrEmpty($RowKey))
     {
-        Throw $CosmosEmptyKeysErrorMessage
+        Throw $EmptyKeysErrorMessage
     }
 }
 
@@ -41,70 +41,100 @@ function ExecuteQueryAsync
 	(
 		[Parameter(Mandatory=$true)]
 		$Table,
-		[Parameter(Mandatory=$true)]
-		$TableQuery
+
+		[Parameter(Mandatory=$false)]
+		[string]$Filter = $null,
+
+		[Parameter(Mandatory=$false)]
+		$SelectColumn = $null,
+
+		[Parameter(Mandatory=$false)]
+		[Nullable[int]]$Top = $null,
+
+		[Parameter(Mandatory=$false)]
+		$TableQuery = $null
 	)
 	# Internal function
-	# Executes query in async mode
+	# Executes table query
 
-	if ($TableQuery -ne $null)
+	if ($null -ne $TableQuery)
 	{
-        $token = $null
-		$AllRows = @()
-		do
+		if ($TableQuery -is [string])
 		{
-			$Results = $Table.ExecuteQuerySegmentedAsync($TableQuery, $token)
-			$token = $Results.Result.ContinuationToken
-			$AllRows += $Results.Result.Results
-			# TakeCount controls the number of results returned per page, not
-			# for the entire query. See e.g. the note in
-			# https://docs.microsoft.com/azure/cosmos-db/table-storage-design-guide#retrieve-large-numbers-of-entities-from-a-query
-			if (($null -ne $token) -and ($null -ne $TableQuery.TakeCount))
-			{
-				# If the take count is larger than the number of rows in this
-				# segment, there are more rows to return.
-				if ($TableQuery.TakeCount -gt $Results.Result.Results.Count)
-				{
-					$TableQuery.TakeCount -= $Results.Result.Results.Count
-				}
-				else
-				{
-					# No more rows are available in the current page.
-					break
-				}
-			}
-		} while ($token)
-
-		return $AllRows
+			$Filter = $TableQuery
+		}
+		else
+		{
+			if ($TableQuery.FilterString) { $Filter = $TableQuery.FilterString }
+			if ($TableQuery.SelectColumns) { $SelectColumn = $TableQuery.SelectColumns }
+			if ($TableQuery.TakeCount) { $Top = $TableQuery.TakeCount }
+		}
 	}
+
+	$AllRows = [System.Collections.Generic.List[Azure.Data.Tables.TableEntity]]::new()
+	$count = 0
+	[string]$queryString = if ([string]::IsNullOrEmpty($Filter)) { $null } else { $Filter }
+	$results = $Table.Query[Azure.Data.Tables.TableEntity]($queryString, [Nullable[int]]$null, $SelectColumn, [System.Threading.CancellationToken]::None)
+
+	foreach ($row in $results)
+	{
+		$AllRows.Add($row)
+		$count++
+		if (($null -ne $Top) -and ($count -ge $Top))
+		{
+			break
+		}
+	}
+
+	return ,$AllRows
 }
 
 function GetPSObjectFromEntity($entityList)
 {
 	# Internal function
-	# Converts entities output from the ExecuteQuery method of table into an array of PowerShell Objects
+	# Converts entities output from TableClient into an array of PowerShell Objects
 
 	$returnObjects = @()
 
-	if (-not [string]::IsNullOrEmpty($entityList))
+	if ($null -ne $entityList)
 	{
-		foreach ($entity in $entityList)
+		if ($entityList -is [Azure.Data.Tables.TableEntity])
 		{
-			$entityNewObj = New-Object -TypeName psobject
-			$entity.Properties.Keys | ForEach-Object {Add-Member -InputObject $entityNewObj -Name $_ -Value $entity.Properties[$_].PropertyAsObject -MemberType NoteProperty}
+			$entities = [System.Collections.Generic.List[Azure.Data.Tables.TableEntity]]::new()
+			$entities.Add($entityList)
+		}
+		else
+		{
+			$entities = $entityList
+		}
 
-			# Adding table entity other attributes
-			Add-Member -InputObject $entityNewObj -Name "PartitionKey" -Value $entity.PartitionKey -MemberType NoteProperty
-			Add-Member -InputObject $entityNewObj -Name "RowKey" -Value $entity.RowKey -MemberType NoteProperty
-			Add-Member -InputObject $entityNewObj -Name "TableTimestamp" -Value $entity.Timestamp -MemberType NoteProperty
-			Add-Member -InputObject $entityNewObj -Name "Etag" -Value $entity.Etag -MemberType NoteProperty
+		foreach ($entity in $entities)
+		{
+			if ($entity -is [Azure.Data.Tables.TableEntity])
+			{
+				$entityNewObj = New-Object -TypeName psobject
 
-			$returnObjects += $entityNewObj
+				foreach ($key in $entity.Keys)
+				{
+					if ($key -ne "PartitionKey" -and $key -ne "RowKey" -and $key -ne "Timestamp" -and $key -ne "odata.etag")
+					{
+						Add-Member -InputObject $entityNewObj -Name $key -Value $entity[$key] -MemberType NoteProperty
+					}
+				}
+
+				# Adding table entity other attributes
+				Add-Member -InputObject $entityNewObj -Name "PartitionKey" -Value $entity.PartitionKey -MemberType NoteProperty
+				Add-Member -InputObject $entityNewObj -Name "RowKey" -Value $entity.RowKey -MemberType NoteProperty
+				Add-Member -InputObject $entityNewObj -Name "TableTimestamp" -Value $entity.Timestamp -MemberType NoteProperty
+				$etag = if ($null -ne $entity.ETag) { $entity.ETag.ToString() } else { "" }
+				Add-Member -InputObject $entityNewObj -Name "Etag" -Value $etag -MemberType NoteProperty
+
+				$returnObjects += $entityNewObj
+			}
 		}
 	}
 
 	return $returnObjects
-
 }
 
 
@@ -164,13 +194,6 @@ function Get-AzTableTable
 				$endpoint = "https://{0}.table.core.windows.net"
 				$nullTableErrorMessage = "Table $TableName could not be retrieved from $storageAccountName on resource group $resourceGroupName"
 			}
-			else
-			{
-				# Future Cosmos implementation
-				# $key = $keys.primaryMasterKey
-				# $endpoint = "https://{0}.table.Cosmos.azure.com"
-				# $nullTableErrorMessage = "Table $TableName could not be retrieved from $<<<TDB VAR>>> on resource group $resourceGroupName"
-			}
 		}
 		else
 		{
@@ -178,22 +201,16 @@ function Get-AzTableTable
 		}
 
 		$connString = [string]::Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};TableEndpoint=$endpoint",$storageAccountName,$key)
-		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
-		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
-
-		$Table.CreateIfNotExistsAsync() | Out-Null
+		[Azure.Data.Tables.TableClient]$Table = [Azure.Data.Tables.TableClient]::new($connString, $TableName)
+		$Table.CreateIfNotExists() | Out-Null
 	}
 	else
 	{
 		# https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator
 		$nullTableErrorMessage = "Table $TableName could not be retrieved from Azure Storage Emulator"
-		$connString ="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1"
-		[Microsoft.Azure.Cosmos.Table.CloudStorageAccount]$storageAccount = [Microsoft.Azure.Cosmos.Table.CloudStorageAccount]::Parse($connString)
-		[Microsoft.Azure.Cosmos.Table.CloudTableClient]$TableClient = [Microsoft.Azure.Cosmos.Table.CloudTableClient]::new($storageAccount.TableEndpoint,$storageAccount.Credentials)
-		[Microsoft.Azure.Cosmos.Table.CloudTable]$Table = [Microsoft.Azure.Cosmos.Table.CloudTable]$TableClient.GetTableReference($TableName)
-
-		$Table.CreateIfNotExistsAsync() | Out-Null
+		$connString = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1"
+		[Azure.Data.Tables.TableClient]$Table = [Azure.Data.Tables.TableClient]::new($connString, $TableName)
+		$Table.CreateIfNotExists() | Out-Null
 	}
 
 	# Checking if there a table got returned
@@ -213,7 +230,7 @@ function Add-AzTableRow
 	.DESCRIPTION
 		Adds a row/entity to a specified table
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity will be added
+		Table object of type Azure.Data.Tables.TableClient where the entity will be added
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER RowKey
@@ -246,24 +263,27 @@ function Add-AzTableRow
 	)
 
 	# Creates the table entity with mandatory PartitionKey and RowKey arguments
-	$entity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $PartitionKey, $RowKey
+	$entity = [Azure.Data.Tables.TableEntity]::new($PartitionKey, $RowKey)
 
-    # Adding the additional columns to the table entity
-	foreach ($prop in $property.Keys)
+	# Adding the additional columns to the table entity
+	if ($null -ne $property)
 	{
-		if ($prop -ne "TableTimestamp")
+		foreach ($prop in $property.Keys)
 		{
-			$entity.Properties.Add($prop, $property.Item($prop))
+			if ($prop -ne "TableTimestamp")
+			{
+				$entity[$prop] = $property.Item($prop)
+			}
 		}
 	}
 
-    if ($UpdateExisting)
+	if ($UpdateExisting)
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrReplace($entity)))
+		return ($Table.UpsertEntity($entity, [Azure.Data.Tables.TableUpdateMode]::Replace, [System.Threading.CancellationToken]::None))
 	}
 	else
 	{
-		return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Insert($entity)))
+		return ($Table.AddEntity($entity, [System.Threading.CancellationToken]::None))
 	}
 }
 
@@ -275,7 +295,7 @@ function Get-AzTableRowAll
 	.DESCRIPTION
 		Returns all rows/entities from a storage table - no Filtering
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities
 	.EXAMPLE
 		# Getting all rows
 		Get-AzTableRowAll -Table $Table
@@ -308,7 +328,7 @@ function Get-AzTableRowByPartitionKey
 	.DESCRIPTION
 		Returns one or more rows/entities based on Partition Key
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER Top
@@ -353,7 +373,7 @@ function Get-AzTableRowByPartitionKeyRowKey
 	.DESCRIPTION
 		Returns one entity based on Partition Key and RowKey
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities
 	.PARAMETER PartitionKey
 		Identifies the table partition
 	.PARAMETER RowKey
@@ -405,7 +425,7 @@ function Get-AzTableRowByColumnName
 	.DESCRIPTION
 		Returns one or more rows/entities based on a specified column and its value
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities
 	.PARAMETER ColumnName
 		Column name to compare the value to
 	.PARAMETER Value
@@ -473,15 +493,15 @@ function Get-AzTableRowByCustomFilter
 		Returns one or more rows/entities based on custom Filter.
 	.DESCRIPTION
 		Returns one or more rows/entities based on custom Filter. This custom Filter can be
-		built using the Microsoft.Azure.Cosmos.Table.TableQuery class or direct text.
+		built using OData filter format or direct text.
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities
 	.PARAMETER CustomFilter
 		Custom Filter string.
 	.PARAMETER Top
 		Return only the first n rows from the query
 	.EXAMPLE
-		# Getting row by firstname by using the class Microsoft.Azure.Cosmos.Table.TableQuery
+		# Getting row by firstname by using custom filter
 	$MyFilter = "(firstName eq 'User1')"
 		Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $MyFilter
 	.EXAMPLE
@@ -524,7 +544,7 @@ function Get-AzTableRow
 	.DESCRIPTION
 		Used to return entities from a table with several options, this replaces all other Get-AzTable<XYZ> cmdlets.
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable to retrieve entities (common to all parameter sets)
+		Table object of type Azure.Data.Tables.TableClient to retrieve entities (common to all parameter sets)
 	.PARAMETER PartitionKey
 		Identifies the table partition (byPartitionKey and byPartRowKeys parameter sets)
 	.PARAMETER RowKey
@@ -620,36 +640,33 @@ function Get-AzTableRow
 		[Nullable[Int32]]$Top = $null
 	)
 
-	$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
+	$OperatorMap = @{
+		"Equal"              = "eq"
+		"NotEqual"           = "ne"
+		"GreaterThan"        = "gt"
+		"GreaterThanOrEqual" = "ge"
+		"LessThan"           = "lt"
+		"LessThanOrEqual"    = "le"
+	}
 
 	# Building filters if any
 	if ($PSCmdlet.ParameterSetName -eq "byPartitionKey")
 	{
-		[string]$Filter = `
-			[Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("PartitionKey",`
-			[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,$PartitionKey)
+		[string]$Filter = "PartitionKey eq '$($PartitionKey.Replace("'", "''"))'"
 	}
 	elseif ($PSCmdlet.ParameterSetName -eq "byPartRowKeys")
 	{
-		[string]$FilterA = `
-			[Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("PartitionKey",`
-			[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,$PartitionKey)
-
-		[string]$FilterB = `
-			[Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("RowKey",`
-			[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,$RowKey)
-
-		[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($FilterA,"and",$FilterB)
+		[string]$Filter = "(PartitionKey eq '$($PartitionKey.Replace("'", "''"))') and (RowKey eq '$($RowKey.Replace("'", "''"))')"
 	}
 	elseif ($PSCmdlet.ParameterSetName -eq "byColummnString")
 	{
-		[string]$Filter = `
-			[Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition($ColumnName,[Microsoft.Azure.Cosmos.Table.QueryComparisons]::$Operator,$Value)
+		$op = $OperatorMap[$Operator]
+		[string]$Filter = "$ColumnName $op '$($Value.Replace("'", "''"))'"
 	}
 	elseif ($PSCmdlet.ParameterSetName -eq "byColummnGuid")
 	{
-		[string]$Filter = `
-			[Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterConditionForGuid($ColumnName,[Microsoft.Azure.Cosmos.Table.QueryComparisons]::$Operator,$GuidValue)
+		$op = $OperatorMap[$Operator]
+		[string]$Filter = "$ColumnName $op guid'$GuidValue'"
 	}
 	elseif ($PSCmdlet.ParameterSetName -eq "byCustomFilter")
 	{
@@ -657,37 +674,15 @@ function Get-AzTableRow
 	}
 	else
 	{
-		[string]$filter = $null
-	}
-
-	# Adding filter if not null
-	if (-not [string]::IsNullOrEmpty($Filter))
-	{
-		$TableQuery.FilterString = $Filter
-	}
-
-	# Selecting columns if specified
-	if ($null -ne $SelectColumn){
-		$TableQuery.SelectColumns = $SelectColumn
-	}
-
-	# Set number of rows to return.
-	if ($null -ne $Top)
-	{
-		$TableQuery.TakeCount = $Top
+		[string]$Filter = $null
 	}
 
 	# Getting results
-	if (($TableQuery.FilterString -ne $null) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
+	if ((-not [string]::IsNullOrEmpty($Filter)) -or ($PSCmdlet.ParameterSetName -eq "GetAll"))
 	{
-		$Result = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
+		$Result = ExecuteQueryAsync -Table $Table -Filter $Filter -SelectColumn $SelectColumn -Top $Top
 
-		# if (-not [string]::IsNullOrEmpty($Result.Result.Results))
-		# {
-		# 	return (GetPSObjectFromEntity($Result.Result.Results))
-		# }
-
-		if (-not [string]::IsNullOrEmpty($Result))
+		if ($null -ne $Result -and $Result.Count -gt 0)
 		{
 			return (GetPSObjectFromEntity($Result))
 		}
@@ -705,13 +700,13 @@ function Update-AzTableRow
 		This cmdlet cannot update Partition Key and/or RowKey because it uses those two values to locate the entity to update it, if this operation is required
 		please delete the old entity and add the new one with the updated values instead.
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+		Table object of type Azure.Data.Tables.TableClient where the entity exists
 	.PARAMETER Entity
 		The entity/row with new values to perform the update.
 	.EXAMPLE
 		# Updating an entity
 
-		[string]$Filter = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"User1")
+		[string]$Filter = "firstName eq 'User1'"
 		$person = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 		$person.lastName = "New Last Name"
 		$person | Update-AzTableRow -Table $Table
@@ -735,23 +730,23 @@ function Update-AzTableRow
         throw "Update operation can happen on only one entity at a time, not in a list/array of entities."
     }
 
-	$updatedEntity = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.DynamicTableEntity" -ArgumentList $entity.PartitionKey, $entity.RowKey
+	$updatedEntity = [Azure.Data.Tables.TableEntity]::new($entity.PartitionKey, $entity.RowKey)
 
 	# Iterating over PS Object properties to add to the updated entity
 	foreach ($prop in $entity.psobject.Properties)
 	{
-		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp"))
+		if (($prop.name -ne "PartitionKey") -and ($prop.name -ne "RowKey") -and ($prop.name -ne "Timestamp") -and ($prop.name -ne "Etag") -and ($prop.name -ne "TableTimestamp") -and ($prop.name -ne "odata.etag"))
 		{
-			$updatedEntity.Properties.Add($prop.name, $prop.Value)
+			$updatedEntity[$prop.name] = $prop.Value
 		}
 	}
 
-	$updatedEntity.ETag = $entity.Etag
-	$updatedEntity.Timestamp = $entity.TableTimestamp
+	if (-not [string]::IsNullOrEmpty($entity.Etag))
+	{
+		$updatedEntity.ETag = [Azure.ETag, Azure.Core]::new($entity.Etag)
+	}
 
-    # Updating the dynamic table entity to the table
-    # return ($Table.ExecuteAsync([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
-	return ($Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::InsertOrMerge($updatedEntity)))
+	return ($Table.UpsertEntity($updatedEntity, [Azure.Data.Tables.TableUpdateMode]::Merge, [System.Threading.CancellationToken]::None))
 }
 
 function Remove-AzTableRow
@@ -763,7 +758,7 @@ function Remove-AzTableRow
 		Remove-AzTableRow - Removes a specified table row. It accepts multiple deletions through the Pipeline when passing entities returned from the Get-AzTableRow
 		available cmdlets. It also can delete a row/entity using Partition and Row Key properties directly.
 	.PARAMETER Table
-		Table object of type Microsoft.Azure.Cosmos.Table.CloudTable where the entity exists
+		Table object of type Azure.Data.Tables.TableClient where the entity exists
 	.PARAMETER Entity (ParameterSetName=byEntityPSObjectObject)
 		The entity/row with new values to perform the deletion.
 	.PARAMETER PartitionKey (ParameterSetName=byPartitionandRowKeys)
@@ -772,10 +767,8 @@ function Remove-AzTableRow
 		Row key that uniquely identifies the entity within the partition.
 	.EXAMPLE
 		# Deleting an entry by entity PS Object
-		[string]$Filter1 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("firstName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Paulo")
-		[string]$Filter2 = [Microsoft.Azure.Cosmos.Table.TableQuery]::GenerateFilterCondition("lastName",[Microsoft.Azure.Cosmos.Table.QueryComparisons]::Equal,"Marques")
-		[string]$finalFilter = [Microsoft.Azure.Cosmos.Table.TableQuery]::CombineFilters($Filter1,"and",$Filter2)
-		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $finalFilter
+		[string]$Filter = "(firstName eq 'Paulo') and (lastName eq 'Marques')"
+		$personToDelete = Get-AzTableRowByCustomFilter -Table $Table -CustomFilter $Filter
 		$personToDelete | Remove-AzTableRow -Table $Table
 	.EXAMPLE
 		# Deleting an entry by using PartitionKey and row key directly
@@ -823,20 +816,16 @@ function Remove-AzTableRow
 			$RowKey = $entity.RowKey
 		}
 
-		$TableQuery = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableQuery"
-		[string]$Filter =  "(PartitionKey eq '$($PartitionKey)') and (RowKey eq '$($RowKey)')"
-		$TableQuery.FilterString = $Filter
-		$itemToDelete = ExecuteQueryAsync -Table $Table -TableQuery $TableQuery
-
-		if ($itemToDelete -ne $null)
+		try
 		{
-			# Converting DynamicTableEntity to TableEntity for deletion
-			$entityToDelete = New-Object -TypeName "Microsoft.Azure.Cosmos.Table.TableEntity"
-			$entityToDelete.ETag = $itemToDelete.Etag
-			$entityToDelete.PartitionKey = $itemToDelete.PartitionKey
-			$entityToDelete.RowKey = $itemToDelete.RowKey
-
-			$Results += $Table.Execute([Microsoft.Azure.Cosmos.Table.TableOperation]::Delete($entityToDelete))
+			$Results += $Table.DeleteEntity($PartitionKey, $RowKey, [Azure.ETag, Azure.Core]::All, [System.Threading.CancellationToken]::None)
+		}
+		catch [Azure.RequestFailedException]
+		{
+			if ($_.Exception.Status -ne 404)
+			{
+				throw $_
+			}
 		}
 	}
 
